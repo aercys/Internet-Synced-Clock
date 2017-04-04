@@ -1,0 +1,702 @@
+   1               		.file	"rtc.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   8               		.text
+   9               	.Ltext0:
+ 119               		.section	.rodata.str1.1,"aMS",@progbits,1
+ 120               	.LC0:
+ 121 0000 6572 6369 		.string	"erciyas.biz"
+ 121      7961 732E 
+ 121      6269 7A00 
+ 122               	.LC1:
+ 123 000c 5443 5000 		.string	"TCP"
+ 124               	.LC2:
+ 125 0010 4154 2B43 		.string	"AT+CIPSTART=\"%s\",\"%s\",%d\r\n"
+ 125      4950 5354 
+ 125      4152 543D 
+ 125      2225 7322 
+ 125      2C22 2573 
+ 126               	.LC3:
+ 127 002b 4F4B 00   		.string	"OK"
+ 128               	.LC4:
+ 129 002e 4154 2B43 		.string	"AT+CIPSEND=%d\r\n"
+ 129      4950 5345 
+ 129      4E44 3D25 
+ 129      640D 0A00 
+ 130               	.LC5:
+ 131 003e 6874 7470 		.string	"http://erciyas.biz/time.php"
+ 131      3A2F 2F65 
+ 131      7263 6979 
+ 131      6173 2E62 
+ 131      697A 2F74 
+ 132               	.LC6:
+ 133 005a 4745 5420 		.string	"GET %s HTTP/1.0\r\n\r\n"
+ 133      2573 2048 
+ 133      5454 502F 
+ 133      312E 300D 
+ 133      0A0D 0A00 
+ 134               	.LC7:
+ 135 006e 434C 4F53 		.string	"CLOSED"
+ 135      4544 00
+ 136               		.text
+ 138               	.global	make_time_request
+ 140               	make_time_request:
+   1:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //
+   2:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //  rtc.c
+   3:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //  TemperatureServer
+   4:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //
+   5:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //  Created by Atakan ERCIYAS on 03/04/2017.
+   6:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //  Copyright © 2017 aercys. All rights reserved.
+   7:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** //
+   8:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+   9:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** #include "rtc.h"
+  10:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** #include "espwifi.h"
+  11:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** #include <avr/io.h>
+  12:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** #include <string.h>
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** #include <stdlib.h>
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int second = 0, minute = 0, hour = 0;
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int day = 0, month = 0, year = 0;
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** void sync_time() {
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     char *response;
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     char *timevar = malloc(sizeof(char) * 22);
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     int offset;
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     connect_wifi(SSID_NAME, SSID_PASSWORD);
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     response = make_time_request();
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     offset = strstr(response, "<<") - response;
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     strcpy(timevar, &response[offset]);
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     sscanf(timevar, "<<%d:%d:%d&%d/%d/%d>>", &hour, &minute, &second, &day, &month, &year);
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** char *make_time_request() {
+ 142               	.LM0:
+ 143               	.LFBB1:
+ 144               	/* prologue: function */
+ 145               	/* frame size = 0 */
+ 146               	/* stack size = 0 */
+ 147               	.L__stack_usage = 0
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     printf(CIP_START,"TCP", "erciyas.biz", 80);
+ 149               	.LM1:
+ 150 0000 1F92      		push __zero_reg__
+ 151 0002 80E5      		ldi r24,lo8(80)
+ 152 0004 8F93      		push r24
+ 153 0006 80E0      		ldi r24,lo8(.LC0)
+ 154 0008 90E0      		ldi r25,hi8(.LC0)
+ 155 000a 9F93      		push r25
+ 156 000c 8F93      		push r24
+ 157 000e 80E0      		ldi r24,lo8(.LC1)
+ 158 0010 90E0      		ldi r25,hi8(.LC1)
+ 159 0012 9F93      		push r25
+ 160 0014 8F93      		push r24
+ 161 0016 80E0      		ldi r24,lo8(.LC2)
+ 162 0018 90E0      		ldi r25,hi8(.LC2)
+ 163 001a 9F93      		push r25
+ 164 001c 8F93      		push r24
+ 165 001e 0E94 0000 		call printf
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     uart_getall("OK");
+ 167               	.LM2:
+ 168 0022 80E0      		ldi r24,lo8(.LC3)
+ 169 0024 90E0      		ldi r25,hi8(.LC3)
+ 170 0026 0E94 0000 		call uart_getall
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     printf(CIP_SEND, strlen(GET_REQUEST_STR) + strlen("http://erciyas.biz/time.php") - 2);
+ 172               	.LM3:
+ 173 002a 1F92      		push __zero_reg__
+ 174 002c 8CE2      		ldi r24,lo8(44)
+ 175 002e 8F93      		push r24
+ 176 0030 80E0      		ldi r24,lo8(.LC4)
+ 177 0032 90E0      		ldi r25,hi8(.LC4)
+ 178 0034 9F93      		push r25
+ 179 0036 8F93      		push r24
+ 180 0038 0E94 0000 		call printf
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     uart_getall("OK");
+ 182               	.LM4:
+ 183 003c 80E0      		ldi r24,lo8(.LC3)
+ 184 003e 90E0      		ldi r25,hi8(.LC3)
+ 185 0040 0E94 0000 		call uart_getall
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     printf(GET_REQUEST_STR, "http://erciyas.biz/time.php");
+ 187               	.LM5:
+ 188 0044 80E0      		ldi r24,lo8(.LC5)
+ 189 0046 90E0      		ldi r25,hi8(.LC5)
+ 190 0048 9F93      		push r25
+ 191 004a 8F93      		push r24
+ 192 004c 80E0      		ldi r24,lo8(.LC6)
+ 193 004e 90E0      		ldi r25,hi8(.LC6)
+ 194 0050 9F93      		push r25
+ 195 0052 8F93      		push r24
+ 196 0054 0E94 0000 		call printf
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return uart_getall("CLOSED");;
+ 198               	.LM6:
+ 199 0058 8DB7      		in r24,__SP_L__
+ 200 005a 9EB7      		in r25,__SP_H__
+ 201 005c 4096      		adiw r24,16
+ 202 005e 0FB6      		in __tmp_reg__,__SREG__
+ 203 0060 F894      		cli
+ 204 0062 9EBF      		out __SP_H__,r25
+ 205 0064 0FBE      		out __SREG__,__tmp_reg__
+ 206 0066 8DBF      		out __SP_L__,r24
+ 207 0068 80E0      		ldi r24,lo8(.LC7)
+ 208 006a 90E0      		ldi r25,hi8(.LC7)
+ 209 006c 0C94 0000 		jmp uart_getall
+ 211               	.Lscope1:
+ 212               		.section	.rodata.str1.1
+ 213               	.LC8:
+ 214 0075 6165 3835 		.string	"ae85040pq7"
+ 214      3034 3070 
+ 214      7137 00
+ 215               	.LC9:
+ 216 0080 4552 4349 		.string	"ERCIYAS"
+ 216      5941 5300 
+ 217               	.LC10:
+ 218 0088 3C3C 00   		.string	"<<"
+ 219               	.LC11:
+ 220 008b 3C3C 2564 		.string	"<<%d:%d:%d&%d/%d/%d>>"
+ 220      3A25 643A 
+ 220      2564 2625 
+ 220      642F 2564 
+ 220      2F25 643E 
+ 221               		.text
+ 223               	.global	sync_time
+ 225               	sync_time:
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** void sync_time() {
+ 227               	.LM7:
+ 228               	.LFBB2:
+ 229 0070 CF93      		push r28
+ 230 0072 DF93      		push r29
+ 231               	/* prologue: function */
+ 232               	/* frame size = 0 */
+ 233               	/* stack size = 2 */
+ 234               	.L__stack_usage = 2
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     char *timevar = malloc(sizeof(char) * 22);
+ 236               	.LM8:
+ 237 0074 86E1      		ldi r24,lo8(22)
+ 238 0076 90E0      		ldi r25,0
+ 239 0078 0E94 0000 		call malloc
+ 240 007c EC01      		movw r28,r24
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     connect_wifi(SSID_NAME, SSID_PASSWORD);
+ 242               	.LM9:
+ 243 007e 60E0      		ldi r22,lo8(.LC8)
+ 244 0080 70E0      		ldi r23,hi8(.LC8)
+ 245 0082 80E0      		ldi r24,lo8(.LC9)
+ 246 0084 90E0      		ldi r25,hi8(.LC9)
+ 247 0086 0E94 0000 		call connect_wifi
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     response = make_time_request();
+ 249               	.LM10:
+ 250 008a 0E94 0000 		call make_time_request
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     offset = strstr(response, "<<") - response;
+ 252               	.LM11:
+ 253 008e 60E0      		ldi r22,lo8(.LC10)
+ 254 0090 70E0      		ldi r23,hi8(.LC10)
+ 255 0092 0E94 0000 		call strstr
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     strcpy(timevar, &response[offset]);
+ 257               	.LM12:
+ 258 0096 BC01      		movw r22,r24
+ 259 0098 CE01      		movw r24,r28
+ 260 009a 0E94 0000 		call strcpy
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     sscanf(timevar, "<<%d:%d:%d&%d/%d/%d>>", &hour, &minute, &second, &day, &month, &year);
+ 262               	.LM13:
+ 263 009e 20E0      		ldi r18,lo8(year)
+ 264 00a0 30E0      		ldi r19,hi8(year)
+ 265 00a2 3F93      		push r19
+ 266 00a4 2F93      		push r18
+ 267 00a6 20E0      		ldi r18,lo8(month)
+ 268 00a8 30E0      		ldi r19,hi8(month)
+ 269 00aa 3F93      		push r19
+ 270 00ac 2F93      		push r18
+ 271 00ae 20E0      		ldi r18,lo8(day)
+ 272 00b0 30E0      		ldi r19,hi8(day)
+ 273 00b2 3F93      		push r19
+ 274 00b4 2F93      		push r18
+ 275 00b6 20E0      		ldi r18,lo8(second)
+ 276 00b8 30E0      		ldi r19,hi8(second)
+ 277 00ba 3F93      		push r19
+ 278 00bc 2F93      		push r18
+ 279 00be 20E0      		ldi r18,lo8(minute)
+ 280 00c0 30E0      		ldi r19,hi8(minute)
+ 281 00c2 3F93      		push r19
+ 282 00c4 2F93      		push r18
+ 283 00c6 20E0      		ldi r18,lo8(hour)
+ 284 00c8 30E0      		ldi r19,hi8(hour)
+ 285 00ca 3F93      		push r19
+ 286 00cc 2F93      		push r18
+ 287 00ce 20E0      		ldi r18,lo8(.LC11)
+ 288 00d0 30E0      		ldi r19,hi8(.LC11)
+ 289 00d2 3F93      		push r19
+ 290 00d4 2F93      		push r18
+ 291 00d6 DF93      		push r29
+ 292 00d8 CF93      		push r28
+ 293 00da 0E94 0000 		call sscanf
+ 294 00de 8DB7      		in r24,__SP_L__
+ 295 00e0 9EB7      		in r25,__SP_H__
+ 296 00e2 4096      		adiw r24,16
+ 297 00e4 0FB6      		in __tmp_reg__,__SREG__
+ 298 00e6 F894      		cli
+ 299 00e8 9EBF      		out __SP_H__,r25
+ 300 00ea 0FBE      		out __SREG__,__tmp_reg__
+ 301 00ec 8DBF      		out __SP_L__,r24
+ 302               	/* epilogue start */
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 304               	.LM14:
+ 305 00ee DF91      		pop r29
+ 306 00f0 CF91      		pop r28
+ 307 00f2 0895      		ret
+ 312               	.Lscope2:
+ 314               	.global	init_timer
+ 316               	init_timer:
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** void init_timer() {
+ 318               	.LM15:
+ 319               	.LFBB3:
+ 320               	/* prologue: function */
+ 321               	/* frame size = 0 */
+ 322               	/* stack size = 0 */
+ 323               	.L__stack_usage = 0
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     sync_time();
+ 325               	.LM16:
+ 326 00f4 0E94 0000 		call sync_time
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     ASSR |= (1 << AS2);
+ 328               	.LM17:
+ 329 00f8 E6EB      		ldi r30,lo8(-74)
+ 330 00fa F0E0      		ldi r31,0
+ 331 00fc 8081      		ld r24,Z
+ 332 00fe 8062      		ori r24,lo8(32)
+ 333 0100 8083      		st Z,r24
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     TCCR2B |= (1 << CS22) | (1 << CS20);
+ 335               	.LM18:
+ 336 0102 E1EB      		ldi r30,lo8(-79)
+ 337 0104 F0E0      		ldi r31,0
+ 338 0106 8081      		ld r24,Z
+ 339 0108 8560      		ori r24,lo8(5)
+ 340 010a 8083      		st Z,r24
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     TCNT2 = 0x00;
+ 342               	.LM19:
+ 343 010c 1092 B200 		sts 178,__zero_reg__
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     TIFR2 |= (1 << TOV2);
+ 345               	.LM20:
+ 346 0110 B89A      		sbi 0x17,0
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     TIMSK2 |= (1 << TOIE2);
+ 348               	.LM21:
+ 349 0112 E0E7      		ldi r30,lo8(112)
+ 350 0114 F0E0      		ldi r31,0
+ 351 0116 8081      		ld r24,Z
+ 352 0118 8160      		ori r24,lo8(1)
+ 353 011a 8083      		st Z,r24
+ 354 011c 0895      		ret
+ 356               	.Lscope3:
+ 359               	.global	is_leap_year
+ 361               	is_leap_year:
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** void update_rtc() {
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (++second == 60) {
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         minute++;
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         second = 0;
+  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     }
+  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (minute == 60) {
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         hour++;
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         minute = 0;
+  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     }
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (hour == 24) {
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day++;
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         hour = 0;
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     }
+  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  73:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (day == 32) {
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month++;
+  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day = 1;
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((day == 31) && (month == 4 || month == 6 || month == 9 || month == 11)) {
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month++;
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day = 1;
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((month == 2) && (day == 29) && !is_leap_year(year)) {
+  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month++;
+  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day = 1;
+  82:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((month == 2) && (day == 30)) {
+  83:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month++;
+  84:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day = 1;
+  85:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     }
+  86:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  87:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (month == 13) {
+  88:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         year++;
+  89:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month = 1;
+  90:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     }
+  91:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     
+  92:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+  93:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+  94:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** uint8_t is_leap_year(int year) {
+ 363               	.LM22:
+ 364               	.LFBB4:
+ 365               	/* prologue: function */
+ 366               	/* frame size = 0 */
+ 367               	/* stack size = 0 */
+ 368               	.L__stack_usage = 0
+ 369 011e 9C01      		movw r18,r24
+  95:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (year % 100)
+ 371               	.LM23:
+ 372 0120 64E6      		ldi r22,lo8(100)
+ 373 0122 70E0      		ldi r23,0
+ 374 0124 0E94 0000 		call __divmodhi4
+ 375 0128 892B      		or r24,r25
+ 376 012a 01F0      		breq .L5
+  96:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         return (year % 400) ? 1 : 0;
+ 378               	.LM24:
+ 379 012c C901      		movw r24,r18
+ 380 012e 60E9      		ldi r22,lo8(-112)
+ 381 0130 71E0      		ldi r23,lo8(1)
+ 382 0132 0E94 0000 		call __divmodhi4
+ 383 0136 41E0      		ldi r20,lo8(1)
+ 384 0138 892B      		or r24,r25
+ 385 013a 01F4      		brne .L7
+ 386 013c 00C0      		rjmp .L9
+ 387               	.L5:
+  97:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     else
+  98:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         return (year % 4) ? 1 : 0;
+ 389               	.LM25:
+ 390 013e 2370      		andi r18,3
+ 391 0140 3327      		clr r19
+ 392 0142 41E0      		ldi r20,lo8(1)
+ 393 0144 232B      		or r18,r19
+ 394 0146 01F4      		brne .L7
+ 395               	.L9:
+ 396 0148 40E0      		ldi r20,0
+ 397               	.L7:
+  99:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 399               	.LM26:
+ 400 014a 842F      		mov r24,r20
+ 401 014c 0895      		ret
+ 403               	.Lscope4:
+ 405               	.global	update_rtc
+ 407               	update_rtc:
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** void update_rtc() {
+ 409               	.LM27:
+ 410               	.LFBB5:
+ 411               	/* prologue: function */
+ 412               	/* frame size = 0 */
+ 413               	/* stack size = 0 */
+ 414               	.L__stack_usage = 0
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (++second == 60) {
+ 416               	.LM28:
+ 417 014e 8091 0000 		lds r24,second
+ 418 0152 9091 0000 		lds r25,second+1
+ 419 0156 0196      		adiw r24,1
+ 420 0158 9093 0000 		sts second+1,r25
+ 421 015c 8093 0000 		sts second,r24
+ 422 0160 CC97      		sbiw r24,60
+ 423 0162 01F4      		brne .L12
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         minute++;
+ 425               	.LM29:
+ 426 0164 8091 0000 		lds r24,minute
+ 427 0168 9091 0000 		lds r25,minute+1
+ 428 016c 0196      		adiw r24,1
+ 429 016e 9093 0000 		sts minute+1,r25
+ 430 0172 8093 0000 		sts minute,r24
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         second = 0;
+ 432               	.LM30:
+ 433 0176 1092 0000 		sts second+1,__zero_reg__
+ 434 017a 1092 0000 		sts second,__zero_reg__
+ 435               	.L12:
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (minute == 60) {
+ 437               	.LM31:
+ 438 017e 8091 0000 		lds r24,minute
+ 439 0182 9091 0000 		lds r25,minute+1
+ 440 0186 CC97      		sbiw r24,60
+ 441 0188 01F4      		brne .L13
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         hour++;
+ 443               	.LM32:
+ 444 018a 8091 0000 		lds r24,hour
+ 445 018e 9091 0000 		lds r25,hour+1
+ 446 0192 0196      		adiw r24,1
+ 447 0194 9093 0000 		sts hour+1,r25
+ 448 0198 8093 0000 		sts hour,r24
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         minute = 0;
+ 450               	.LM33:
+ 451 019c 1092 0000 		sts minute+1,__zero_reg__
+ 452 01a0 1092 0000 		sts minute,__zero_reg__
+ 453               	.L13:
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (hour == 24) {
+ 455               	.LM34:
+ 456 01a4 8091 0000 		lds r24,hour
+ 457 01a8 9091 0000 		lds r25,hour+1
+ 458 01ac 4897      		sbiw r24,24
+ 459 01ae 01F4      		brne .L14
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day++;
+ 461               	.LM35:
+ 462 01b0 8091 0000 		lds r24,day
+ 463 01b4 9091 0000 		lds r25,day+1
+ 464 01b8 0196      		adiw r24,1
+ 465 01ba 9093 0000 		sts day+1,r25
+ 466 01be 8093 0000 		sts day,r24
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         hour = 0;
+ 468               	.LM36:
+ 469 01c2 1092 0000 		sts hour+1,__zero_reg__
+ 470 01c6 1092 0000 		sts hour,__zero_reg__
+ 471               	.L14:
+  73:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (day == 32) {
+ 473               	.LM37:
+ 474 01ca 8091 0000 		lds r24,day
+ 475 01ce 9091 0000 		lds r25,day+1
+ 476 01d2 2091 0000 		lds r18,month
+ 477 01d6 3091 0000 		lds r19,month+1
+ 478 01da 8032      		cpi r24,32
+ 479 01dc 9105      		cpc r25,__zero_reg__
+ 480 01de 01F4      		brne .L15
+ 481               	.L18:
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month++;
+ 483               	.LM38:
+ 484 01e0 2F5F      		subi r18,-1
+ 485 01e2 3F4F      		sbci r19,-1
+ 486 01e4 3093 0000 		sts month+1,r19
+ 487 01e8 2093 0000 		sts month,r18
+ 488 01ec 00C0      		rjmp .L31
+ 489               	.L15:
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((day == 31) && (month == 4 || month == 6 || month == 9 || month == 11)) {
+ 491               	.LM39:
+ 492 01ee 8F31      		cpi r24,31
+ 493 01f0 9105      		cpc r25,__zero_reg__
+ 494 01f2 01F4      		brne .L17
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((day == 31) && (month == 4 || month == 6 || month == 9 || month == 11)) {
+ 496               	.LM40:
+ 497 01f4 A901      		movw r20,r18
+ 498 01f6 4D7F      		andi r20,253
+ 499 01f8 4430      		cpi r20,4
+ 500 01fa 5105      		cpc r21,__zero_reg__
+ 501 01fc 01F0      		breq .L18
+ 502 01fe 4930      		cpi r20,9
+ 503 0200 5105      		cpc r21,__zero_reg__
+ 504 0202 01F0      		breq .L18
+ 505               	.L17:
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((month == 2) && (day == 29) && !is_leap_year(year)) {
+ 507               	.LM41:
+ 508 0204 2230      		cpi r18,2
+ 509 0206 3105      		cpc r19,__zero_reg__
+ 510 0208 01F4      		brne .L16
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((month == 2) && (day == 29) && !is_leap_year(year)) {
+ 512               	.LM42:
+ 513 020a 8D31      		cpi r24,29
+ 514 020c 9105      		cpc r25,__zero_reg__
+ 515 020e 01F4      		brne .L19
+ 516 0210 8091 0000 		lds r24,year
+ 517 0214 9091 0000 		lds r25,year+1
+ 518 0218 0E94 0000 		call is_leap_year
+ 519 021c 8111      		cpse r24,__zero_reg__
+ 520 021e 00C0      		rjmp .L16
+ 521               	.L20:
+  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month++;
+ 523               	.LM43:
+ 524 0220 83E0      		ldi r24,lo8(3)
+ 525 0222 90E0      		ldi r25,0
+ 526 0224 9093 0000 		sts month+1,r25
+ 527 0228 8093 0000 		sts month,r24
+ 528               	.L31:
+  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         day = 1;
+ 530               	.LM44:
+ 531 022c 81E0      		ldi r24,lo8(1)
+ 532 022e 90E0      		ldi r25,0
+ 533 0230 9093 0000 		sts day+1,r25
+ 534 0234 8093 0000 		sts day,r24
+ 535 0238 00C0      		rjmp .L16
+ 536               	.L19:
+  82:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     } else if ((month == 2) && (day == 30)) {
+ 538               	.LM45:
+ 539 023a 4E97      		sbiw r24,30
+ 540 023c 01F0      		breq .L20
+ 541               	.L16:
+  87:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     if (month == 13) {
+ 543               	.LM46:
+ 544 023e 8091 0000 		lds r24,month
+ 545 0242 9091 0000 		lds r25,month+1
+ 546 0246 0D97      		sbiw r24,13
+ 547 0248 01F4      		brne .L11
+  88:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         year++;
+ 549               	.LM47:
+ 550 024a 8091 0000 		lds r24,year
+ 551 024e 9091 0000 		lds r25,year+1
+ 552 0252 0196      		adiw r24,1
+ 553 0254 9093 0000 		sts year+1,r25
+ 554 0258 8093 0000 		sts year,r24
+  89:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****         month = 1;
+ 556               	.LM48:
+ 557 025c 81E0      		ldi r24,lo8(1)
+ 558 025e 90E0      		ldi r25,0
+ 559 0260 9093 0000 		sts month+1,r25
+ 560 0264 8093 0000 		sts month,r24
+ 561               	.L11:
+ 562 0268 0895      		ret
+ 564               	.Lscope5:
+ 566               	.global	get_second
+ 568               	get_second:
+ 100:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+ 101:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int get_second() {
+ 570               	.LM49:
+ 571               	.LFBB6:
+ 572               	/* prologue: function */
+ 573               	/* frame size = 0 */
+ 574               	/* stack size = 0 */
+ 575               	.L__stack_usage = 0
+ 102:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return second;
+ 103:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 577               	.LM50:
+ 578 026a 8091 0000 		lds r24,second
+ 579 026e 9091 0000 		lds r25,second+1
+ 580 0272 0895      		ret
+ 582               	.Lscope6:
+ 584               	.global	get_minute
+ 586               	get_minute:
+ 104:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+ 105:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int get_minute() {
+ 588               	.LM51:
+ 589               	.LFBB7:
+ 590               	/* prologue: function */
+ 591               	/* frame size = 0 */
+ 592               	/* stack size = 0 */
+ 593               	.L__stack_usage = 0
+ 106:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return minute;
+ 107:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 595               	.LM52:
+ 596 0274 8091 0000 		lds r24,minute
+ 597 0278 9091 0000 		lds r25,minute+1
+ 598 027c 0895      		ret
+ 600               	.Lscope7:
+ 602               	.global	get_hour
+ 604               	get_hour:
+ 108:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+ 109:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int get_hour() {
+ 606               	.LM53:
+ 607               	.LFBB8:
+ 608               	/* prologue: function */
+ 609               	/* frame size = 0 */
+ 610               	/* stack size = 0 */
+ 611               	.L__stack_usage = 0
+ 110:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return hour;
+ 111:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 613               	.LM54:
+ 614 027e 8091 0000 		lds r24,hour
+ 615 0282 9091 0000 		lds r25,hour+1
+ 616 0286 0895      		ret
+ 618               	.Lscope8:
+ 620               	.global	get_day
+ 622               	get_day:
+ 112:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+ 113:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int get_day() {
+ 624               	.LM55:
+ 625               	.LFBB9:
+ 626               	/* prologue: function */
+ 627               	/* frame size = 0 */
+ 628               	/* stack size = 0 */
+ 629               	.L__stack_usage = 0
+ 114:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return day;
+ 115:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 631               	.LM56:
+ 632 0288 8091 0000 		lds r24,day
+ 633 028c 9091 0000 		lds r25,day+1
+ 634 0290 0895      		ret
+ 636               	.Lscope9:
+ 638               	.global	get_month
+ 640               	get_month:
+ 116:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+ 117:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int get_month() {
+ 642               	.LM57:
+ 643               	.LFBB10:
+ 644               	/* prologue: function */
+ 645               	/* frame size = 0 */
+ 646               	/* stack size = 0 */
+ 647               	.L__stack_usage = 0
+ 118:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return month;
+ 119:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 649               	.LM58:
+ 650 0292 8091 0000 		lds r24,month
+ 651 0296 9091 0000 		lds r25,month+1
+ 652 029a 0895      		ret
+ 654               	.Lscope10:
+ 656               	.global	get_year
+ 658               	get_year:
+ 120:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** 
+ 121:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** int get_year() {
+ 660               	.LM59:
+ 661               	.LFBB11:
+ 662               	/* prologue: function */
+ 663               	/* frame size = 0 */
+ 664               	/* stack size = 0 */
+ 665               	.L__stack_usage = 0
+ 122:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c ****     return year;
+ 123:/Users/atakane/Documents/Electronics/IoClock/IoClock/rtc.c **** }
+ 667               	.LM60:
+ 668 029c 8091 0000 		lds r24,year
+ 669 02a0 9091 0000 		lds r25,year+1
+ 670 02a4 0895      		ret
+ 672               	.Lscope11:
+ 673               	.global	year
+ 674               		.section .bss
+ 677               	year:
+ 678 0000 0000      		.zero	2
+ 679               	.global	month
+ 682               	month:
+ 683 0002 0000      		.zero	2
+ 684               	.global	day
+ 687               	day:
+ 688 0004 0000      		.zero	2
+ 689               	.global	hour
+ 692               	hour:
+ 693 0006 0000      		.zero	2
+ 694               	.global	minute
+ 697               	minute:
+ 698 0008 0000      		.zero	2
+ 699               	.global	second
+ 702               	second:
+ 703 000a 0000      		.zero	2
+ 710               		.text
+ 712               	.Letext0:
+ 713               		.ident	"GCC: (GNU) 4.8.1"
+ 714               	.global __do_copy_data
+ 715               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:00000000 rtc.c
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:140    .text:00000000 make_time_request
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:225    .text:00000070 sync_time
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:677    .bss:00000000 year
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:682    .bss:00000002 month
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:687    .bss:00000004 day
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:702    .bss:0000000a second
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:697    .bss:00000008 minute
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:692    .bss:00000006 hour
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:316    .text:000000f4 init_timer
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:361    .text:0000011e is_leap_year
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:407    .text:0000014e update_rtc
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:568    .text:0000026a get_second
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:586    .text:00000274 get_minute
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:604    .text:0000027e get_hour
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:622    .text:00000288 get_day
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:640    .text:00000292 get_month
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccyYt2bi.s:658    .text:0000029c get_year
+
+UNDEFINED SYMBOLS
+printf
+uart_getall
+malloc
+connect_wifi
+strstr
+strcpy
+sscanf
+__divmodhi4
+__do_copy_data
+__do_clear_bss

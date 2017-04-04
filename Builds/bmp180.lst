@@ -1,0 +1,1479 @@
+   1               		.file	"bmp180.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   8               		.text
+   9               	.Ltext0:
+ 115               	.global	__floatsisf
+ 116               	.global	__divsf3
+ 117               	.global	__subsf3
+ 118               	.global	__mulsf3
+ 120               	.global	calculate_altitude
+ 122               	calculate_altitude:
+   1:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //
+   2:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //  bmp180.c
+   3:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //  BMP180
+   4:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //
+   5:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //  Created by Atakan. on 18/08/16.
+   6:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //  Copyright © 2016 Atakan. All rights reserved.
+   7:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** //
+   8:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+   9:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** #include "bmp180.h"
+  10:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  11:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** bmp180 bmp_180;
+  12:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** const uint16_t bmp180_coeff_addr[11] = {
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     0xAAAB, 0xACAD, 0xAEAF, 0xB0B1, 0xB2B3,
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     0xB4B5, 0xB6B7, 0xB8B9, 0xBABB, 0xBCBD,
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     0xBEBF
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** };
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void init_sensor(short mode) {
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     init_twi();
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     read_coeffs();
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.mode = mode;
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void calculate_temperature() {
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     long UT, X1, X2, B5;
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     UT = read_temperature();
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (UT - bmp_180.calib_coeffs.AC6) * bmp_180.calib_coeffs.AC5 / pow(2, 15);
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = bmp_180.calib_coeffs.MC * pow(2, 11) / (X1 + bmp_180.calib_coeffs.MD);
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B5 = X1 + X2;
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.B5 = B5;
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.temperature = (B5 + 8) / pow(2, 4);
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void calculate_pressure() {
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     long UP, X1, X2, X3, B3, B6, _pressure;
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     unsigned long B4, B7;
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     UP = read_pressure();
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B6 = bmp_180.calib_coeffs.B5 - 4000;
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (bmp_180.calib_coeffs.B2 * (B6 * B6 >> 12)) >> 11;
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = bmp_180.calib_coeffs.AC2 * B6 >> 11;
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X3 = X1 + X2;
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B3 = ((((long)bmp_180.calib_coeffs.AC1 * 4 + X3) << bmp_180.mode) + 2) / 4;
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = bmp_180.calib_coeffs.AC3 * B6 >> 13;
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = (bmp_180.calib_coeffs.B1 * (B6 * B6 >> 12)) >> 16;
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X3 = ((X1 + X2) + 2) >> 2;
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B4 = bmp_180.calib_coeffs.AC4 * (unsigned long) (X3 + 32768) >> 15;
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B7 = ((unsigned long) UP - B3) * (50000UL >> bmp_180.mode);
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     if (B7 < 0x80000000UL)
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         _pressure = (B7 * 2) / B4;
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     else
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         _pressure = (B7 / B4) * 2;
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (_pressure >> 8) * (_pressure >> 8);
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (X1 * 3038) >> 16;
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = (-7357 * _pressure) >> 16;
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.pressure = _pressure + ((X1 + X2 + 3791) >> 4);
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void calculate_altitude() {
+ 124               	.LM0:
+ 125               	.LFBB1:
+ 126               	/* prologue: function */
+ 127               	/* frame size = 0 */
+ 128               	/* stack size = 0 */
+ 129               	.L__stack_usage = 0
+  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.altitude = (float) 44330 * (1 - pow(((float) bmp_180.pressure / pressure_sea_level), 0.
+ 131               	.LM1:
+ 132 0000 6091 0000 		lds r22,bmp_180+14
+ 133 0004 7091 0000 		lds r23,bmp_180+14+1
+ 134 0008 8091 0000 		lds r24,bmp_180+14+2
+ 135 000c 9091 0000 		lds r25,bmp_180+14+3
+ 136 0010 0E94 0000 		call __floatsisf
+ 137 0014 20E8      		ldi r18,lo8(-128)
+ 138 0016 36EE      		ldi r19,lo8(-26)
+ 139 0018 45EC      		ldi r20,lo8(-59)
+ 140 001a 57E4      		ldi r21,lo8(71)
+ 141 001c 0E94 0000 		call __divsf3
+ 142 0020 21E0      		ldi r18,lo8(1)
+ 143 0022 3EED      		ldi r19,lo8(-34)
+ 144 0024 42E4      		ldi r20,lo8(66)
+ 145 0026 5EE3      		ldi r21,lo8(62)
+ 146 0028 0E94 0000 		call pow
+ 147 002c 9B01      		movw r18,r22
+ 148 002e AC01      		movw r20,r24
+ 149 0030 60E0      		ldi r22,0
+ 150 0032 70E0      		ldi r23,0
+ 151 0034 80E8      		ldi r24,lo8(-128)
+ 152 0036 9FE3      		ldi r25,lo8(63)
+ 153 0038 0E94 0000 		call __subsf3
+ 154 003c 20E0      		ldi r18,0
+ 155 003e 3AE2      		ldi r19,lo8(42)
+ 156 0040 4DE2      		ldi r20,lo8(45)
+ 157 0042 57E4      		ldi r21,lo8(71)
+ 158 0044 0E94 0000 		call __mulsf3
+ 159 0048 6093 0000 		sts bmp_180+18,r22
+ 160 004c 7093 0000 		sts bmp_180+18+1,r23
+ 161 0050 8093 0000 		sts bmp_180+18+2,r24
+ 162 0054 9093 0000 		sts bmp_180+18+3,r25
+ 163 0058 0895      		ret
+ 165               	.Lscope1:
+ 167               	.global	read_temperature
+ 169               	read_temperature:
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** long read_temperature() {
+ 171               	.LM2:
+ 172               	.LFBB2:
+ 173 005a CF93      		push r28
+ 174 005c DF93      		push r29
+ 175               	/* prologue: function */
+ 176               	/* frame size = 0 */
+ 177               	/* stack size = 2 */
+ 178               	.L__stack_usage = 2
+  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     short _temperature;
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     start_transmission();
+ 180               	.LM3:
+ 181 005e 0E94 0000 		call start_transmission
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_write_addr);
+ 183               	.LM4:
+ 184 0062 8EEE      		ldi r24,lo8(-18)
+ 185 0064 0E94 0000 		call send_addr
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(control_reg_addr);
+ 187               	.LM5:
+ 188 0068 84EF      		ldi r24,lo8(-12)
+ 189 006a 0E94 0000 		call send_data
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(temperature_sel);
+ 191               	.LM6:
+ 192 006e 8EE2      		ldi r24,lo8(46)
+ 193 0070 0E94 0000 		call send_data
+  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     end_transmission();
+ 195               	.LM7:
+ 196 0074 0E94 0000 		call end_transmission
+ 197               	.LBB20:
+ 198               	.LBB21:
+ 200               	.Ltext1:
+   1:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   6:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   9:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  12:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  17:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  21:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  33:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* $Id$ */
+  34:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  35:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  38:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  41:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  42:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  46:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \file */
+  47:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \code
+  49:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \endcode
+  53:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  54:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     used.
+  58:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  59:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  68:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  77:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  81:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** */
+  82:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  83:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  87:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  88:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  93:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  94:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  97:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  98:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+ 103:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 104:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /**
+ 105:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 107:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 109:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 112:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 114:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 120:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 125:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 129:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 132:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 140:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  */
+ 141:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** void
+ 142:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** {
+ 144:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	double __tmp ; 
+ 145:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 146:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 147:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 148:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 149:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 151:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 152:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 153:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 154:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 155:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 156:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 157:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 158:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#else
+ 159:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//round up by default
+ 160:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 161:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#endif
+ 162:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 163:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 202               	.LM8:
+ 203 0078 87E2      		ldi r24,lo8(8999)
+ 204 007a 93E2      		ldi r25,hi8(8999)
+ 205 007c 0197      		1: sbiw r24,1
+ 206 007e 01F4      		brne 1b
+ 207 0080 00C0      		rjmp .
+ 208 0082 0000      		nop
+ 209               	.LBE21:
+ 210               	.LBE20:
+ 212               	.Ltext2:
+  73:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     _delay_ms(wait_temperature);
+  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     start_transmission();
+ 214               	.LM9:
+ 215 0084 0E94 0000 		call start_transmission
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_write_addr);
+ 217               	.LM10:
+ 218 0088 8EEE      		ldi r24,lo8(-18)
+ 219 008a 0E94 0000 		call send_addr
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(out_msb);
+ 221               	.LM11:
+ 222 008e 86EF      		ldi r24,lo8(-10)
+ 223 0090 0E94 0000 		call send_data
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(out_lsb);
+ 225               	.LM12:
+ 226 0094 87EF      		ldi r24,lo8(-9)
+ 227 0096 0E94 0000 		call send_data
+  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     restart();
+ 229               	.LM13:
+ 230 009a 0E94 0000 		call restart
+  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_read_addr);
+ 232               	.LM14:
+ 233 009e 8FEE      		ldi r24,lo8(-17)
+ 234 00a0 0E94 0000 		call send_addr
+  82:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     _temperature = read_data(1) << 8;
+ 236               	.LM15:
+ 237 00a4 81E0      		ldi r24,lo8(1)
+ 238 00a6 90E0      		ldi r25,0
+ 239 00a8 0E94 0000 		call read_data
+ 240 00ac 682F      		mov r22,r24
+ 241 00ae 70E0      		ldi r23,0
+ 242 00b0 D62F      		mov r29,r22
+ 243 00b2 CC27      		clr r28
+  83:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     _temperature |= read_data(0);
+ 245               	.LM16:
+ 246 00b4 80E0      		ldi r24,0
+ 247 00b6 90E0      		ldi r25,0
+ 248 00b8 0E94 0000 		call read_data
+ 249 00bc C82B      		or r28,r24
+  84:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     end_transmission();
+ 251               	.LM17:
+ 252 00be 0E94 0000 		call end_transmission
+  85:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     return (long) _temperature;
+ 254               	.LM18:
+ 255 00c2 BE01      		movw r22,r28
+ 256 00c4 8827      		clr r24
+ 257 00c6 77FD      		sbrc r23,7
+ 258 00c8 8095      		com r24
+ 259 00ca 982F      		mov r25,r24
+ 260               	/* epilogue start */
+  86:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 262               	.LM19:
+ 263 00cc DF91      		pop r29
+ 264 00ce CF91      		pop r28
+ 265 00d0 0895      		ret
+ 267               	.Lscope2:
+ 268               	.global	__fixsfsi
+ 270               	.global	calculate_temperature
+ 272               	calculate_temperature:
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void calculate_temperature() {
+ 274               	.LM20:
+ 275               	.LFBB3:
+ 276 00d2 8F92      		push r8
+ 277 00d4 9F92      		push r9
+ 278 00d6 AF92      		push r10
+ 279 00d8 BF92      		push r11
+ 280 00da CF92      		push r12
+ 281 00dc DF92      		push r13
+ 282 00de EF92      		push r14
+ 283 00e0 FF92      		push r15
+ 284               	/* prologue: function */
+ 285               	/* frame size = 0 */
+ 286               	/* stack size = 8 */
+ 287               	.L__stack_usage = 8
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     UT = read_temperature();
+ 289               	.LM21:
+ 290 00e2 0E94 0000 		call read_temperature
+ 291 00e6 9B01      		movw r18,r22
+ 292 00e8 AC01      		movw r20,r24
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (UT - bmp_180.calib_coeffs.AC6) * bmp_180.calib_coeffs.AC5 / pow(2, 15);
+ 294               	.LM22:
+ 295 00ea 8091 0000 		lds r24,bmp_180+32
+ 296 00ee 9091 0000 		lds r25,bmp_180+32+1
+ 297 00f2 281B      		sub r18,r24
+ 298 00f4 390B      		sbc r19,r25
+ 299 00f6 4109      		sbc r20,__zero_reg__
+ 300 00f8 5109      		sbc r21,__zero_reg__
+ 301 00fa A091 0000 		lds r26,bmp_180+30
+ 302 00fe B091 0000 		lds r27,bmp_180+30+1
+ 303 0102 0E94 0000 		call __muluhisi3
+ 304 0106 0E94 0000 		call __floatsisf
+ 305 010a 20E0      		ldi r18,0
+ 306 010c 30E0      		ldi r19,0
+ 307 010e 40E0      		ldi r20,0
+ 308 0110 58E3      		ldi r21,lo8(56)
+ 309 0112 0E94 0000 		call __mulsf3
+ 310 0116 0E94 0000 		call __fixsfsi
+ 311 011a 6B01      		movw r12,r22
+ 312 011c 7C01      		movw r14,r24
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = bmp_180.calib_coeffs.MC * pow(2, 11) / (X1 + bmp_180.calib_coeffs.MD);
+ 314               	.LM23:
+ 315 011e 6091 0000 		lds r22,bmp_180+44
+ 316 0122 7091 0000 		lds r23,bmp_180+44+1
+ 317 0126 8827      		clr r24
+ 318 0128 77FD      		sbrc r23,7
+ 319 012a 8095      		com r24
+ 320 012c 982F      		mov r25,r24
+ 321 012e 0E94 0000 		call __floatsisf
+ 322 0132 20E0      		ldi r18,0
+ 323 0134 30E0      		ldi r19,0
+ 324 0136 40E0      		ldi r20,0
+ 325 0138 55E4      		ldi r21,lo8(69)
+ 326 013a 0E94 0000 		call __mulsf3
+ 327 013e 4B01      		movw r8,r22
+ 328 0140 5C01      		movw r10,r24
+ 329 0142 8091 0000 		lds r24,bmp_180+46
+ 330 0146 9091 0000 		lds r25,bmp_180+46+1
+ 331 014a BC01      		movw r22,r24
+ 332 014c 8827      		clr r24
+ 333 014e 77FD      		sbrc r23,7
+ 334 0150 8095      		com r24
+ 335 0152 982F      		mov r25,r24
+ 336 0154 6C0D      		add r22,r12
+ 337 0156 7D1D      		adc r23,r13
+ 338 0158 8E1D      		adc r24,r14
+ 339 015a 9F1D      		adc r25,r15
+ 340 015c 0E94 0000 		call __floatsisf
+ 341 0160 9B01      		movw r18,r22
+ 342 0162 AC01      		movw r20,r24
+ 343 0164 C501      		movw r24,r10
+ 344 0166 B401      		movw r22,r8
+ 345 0168 0E94 0000 		call __divsf3
+ 346 016c 0E94 0000 		call __fixsfsi
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B5 = X1 + X2;
+ 348               	.LM24:
+ 349 0170 6C0D      		add r22,r12
+ 350 0172 7D1D      		adc r23,r13
+ 351 0174 8E1D      		adc r24,r14
+ 352 0176 9F1D      		adc r25,r15
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.B5 = B5;
+ 354               	.LM25:
+ 355 0178 6093 0000 		sts bmp_180+38,r22
+ 356 017c 7093 0000 		sts bmp_180+38+1,r23
+ 357 0180 8093 0000 		sts bmp_180+38+2,r24
+ 358 0184 9093 0000 		sts bmp_180+38+3,r25
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.temperature = (B5 + 8) / pow(2, 4);
+ 360               	.LM26:
+ 361 0188 685F      		subi r22,-8
+ 362 018a 7F4F      		sbci r23,-1
+ 363 018c 8F4F      		sbci r24,-1
+ 364 018e 9F4F      		sbci r25,-1
+ 365 0190 0E94 0000 		call __floatsisf
+ 366 0194 20E0      		ldi r18,0
+ 367 0196 30E0      		ldi r19,0
+ 368 0198 40E8      		ldi r20,lo8(-128)
+ 369 019a 5DE3      		ldi r21,lo8(61)
+ 370 019c 0E94 0000 		call __mulsf3
+ 371 01a0 0E94 0000 		call __fixsfsi
+ 372 01a4 6093 0000 		sts bmp_180+10,r22
+ 373 01a8 7093 0000 		sts bmp_180+10+1,r23
+ 374 01ac 8093 0000 		sts bmp_180+10+2,r24
+ 375 01b0 9093 0000 		sts bmp_180+10+3,r25
+ 376               	/* epilogue start */
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 378               	.LM27:
+ 379 01b4 FF90      		pop r15
+ 380 01b6 EF90      		pop r14
+ 381 01b8 DF90      		pop r13
+ 382 01ba CF90      		pop r12
+ 383 01bc BF90      		pop r11
+ 384 01be AF90      		pop r10
+ 385 01c0 9F90      		pop r9
+ 386 01c2 8F90      		pop r8
+ 387 01c4 0895      		ret
+ 392               	.Lscope3:
+ 394               	.global	read_pressure
+ 396               	read_pressure:
+  87:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+  88:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** long read_pressure() {
+ 398               	.LM28:
+ 399               	.LFBB4:
+ 400 01c6 1F93      		push r17
+ 401 01c8 CF93      		push r28
+ 402 01ca DF93      		push r29
+ 403               	/* prologue: function */
+ 404               	/* frame size = 0 */
+ 405               	/* stack size = 3 */
+ 406               	.L__stack_usage = 3
+  89:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     long UP;
+  90:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     uint8_t msb, lsb, xlsb;
+  91:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  92:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     start_transmission();
+ 408               	.LM29:
+ 409 01cc 0E94 0000 		call start_transmission
+  93:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_write_addr);
+ 411               	.LM30:
+ 412 01d0 8EEE      		ldi r24,lo8(-18)
+ 413 01d2 0E94 0000 		call send_addr
+  94:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(control_reg_addr);
+ 415               	.LM31:
+ 416 01d6 84EF      		ldi r24,lo8(-12)
+ 417 01d8 0E94 0000 		call send_data
+  95:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+  96:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     switch (bmp_180.mode) {
+ 419               	.LM32:
+ 420 01dc 8091 0000 		lds r24,bmp_180
+ 421 01e0 9091 0000 		lds r25,bmp_180+1
+ 422 01e4 8230      		cpi r24,2
+ 423 01e6 9105      		cpc r25,__zero_reg__
+ 424 01e8 01F0      		breq .L6
+ 425 01ea 8330      		cpi r24,3
+ 426 01ec 9105      		cpc r25,__zero_reg__
+ 427 01ee 01F0      		breq .L7
+ 428 01f0 0197      		sbiw r24,1
+ 429 01f2 01F0      		breq .L8
+  97:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         default:
+  98:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         case bmp180_mode_0:
+  99:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             send_data(pressure_0_sel);
+ 431               	.LM33:
+ 432 01f4 84E3      		ldi r24,lo8(52)
+ 433 01f6 0E94 0000 		call send_data
+ 100:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             end_transmission();
+ 435               	.LM34:
+ 436 01fa 0E94 0000 		call end_transmission
+ 437               	.LBB22:
+ 438               	.LBB23:
+ 440               	.Ltext3:
+ 442               	.LM35:
+ 443 01fe 87E2      		ldi r24,lo8(8999)
+ 444 0200 93E2      		ldi r25,hi8(8999)
+ 445 0202 0197      		1: sbiw r24,1
+ 446 0204 01F4      		brne 1b
+ 447 0206 00C0      		rjmp .L10
+ 448               	.L8:
+ 449               	.LBE23:
+ 450               	.LBE22:
+ 452               	.Ltext4:
+ 101:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             _delay_ms(wait_pressure_mode_0);
+ 102:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             break;
+ 103:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         case bmp180_mode_1:
+ 104:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             send_data(pressure_1_sel);
+ 454               	.LM36:
+ 455 0208 84E7      		ldi r24,lo8(116)
+ 456 020a 0E94 0000 		call send_data
+ 105:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             end_transmission();
+ 458               	.LM37:
+ 459 020e 0E94 0000 		call end_transmission
+ 460               	.LBB24:
+ 461               	.LBB25:
+ 463               	.Ltext5:
+ 465               	.LM38:
+ 466 0212 87E9      		ldi r24,lo8(14999)
+ 467 0214 9AE3      		ldi r25,hi8(14999)
+ 468 0216 0197      		1: sbiw r24,1
+ 469 0218 01F4      		brne 1b
+ 470 021a 00C0      		rjmp .L10
+ 471               	.L6:
+ 472               	.LBE25:
+ 473               	.LBE24:
+ 475               	.Ltext6:
+ 106:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             _delay_ms(wait_pressure_mode_1);
+ 107:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             break;
+ 108:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         case bmp180_mode_2:
+ 109:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             send_data(pressure_2_sel);
+ 477               	.LM39:
+ 478 021c 84EB      		ldi r24,lo8(-76)
+ 479 021e 0E94 0000 		call send_data
+ 110:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             end_transmission();
+ 481               	.LM40:
+ 482 0222 0E94 0000 		call end_transmission
+ 483               	.LBB26:
+ 484               	.LBB27:
+ 486               	.Ltext7:
+ 488               	.LM41:
+ 489 0226 87E7      		ldi r24,lo8(26999)
+ 490 0228 99E6      		ldi r25,hi8(26999)
+ 491 022a 0197      		1: sbiw r24,1
+ 492 022c 01F4      		brne 1b
+ 493 022e 00C0      		rjmp .L10
+ 494               	.L7:
+ 495               	.LBE27:
+ 496               	.LBE26:
+ 498               	.Ltext8:
+ 111:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             _delay_ms(wait_pressure_mode_2);
+ 112:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             break;
+ 113:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         case bmp180_mode_3:
+ 114:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             send_data(pressure_3_sel);
+ 500               	.LM42:
+ 501 0230 84EF      		ldi r24,lo8(-12)
+ 502 0232 0E94 0000 		call send_data
+ 115:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             end_transmission();
+ 504               	.LM43:
+ 505 0236 0E94 0000 		call end_transmission
+ 506               	.LBB28:
+ 507               	.LBB29:
+ 509               	.Ltext9:
+ 511               	.LM44:
+ 512 023a 87E3      		ldi r24,lo8(-14537)
+ 513 023c 97EC      		ldi r25,hi8(-14537)
+ 514 023e 0197      		1: sbiw r24,1
+ 515 0240 01F4      		brne 1b
+ 516               	.L10:
+ 517 0242 00C0      		rjmp .
+ 518 0244 0000      		nop
+ 519               	.LBE29:
+ 520               	.LBE28:
+ 521               	.LBB30:
+ 522               	.LBB31:
+ 523 0246 8FEC      		ldi r24,lo8(1999)
+ 524 0248 97E0      		ldi r25,hi8(1999)
+ 525 024a 0197      		1: sbiw r24,1
+ 526 024c 01F4      		brne 1b
+ 527 024e 00C0      		rjmp .
+ 528 0250 0000      		nop
+ 529               	.LBE31:
+ 530               	.LBE30:
+ 532               	.Ltext10:
+ 116:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             _delay_ms(wait_pressure_mode_3);
+ 117:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****             break;
+ 118:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     }
+ 119:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+ 120:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     _delay_ms(1);
+ 121:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     start_transmission();
+ 534               	.LM45:
+ 535 0252 0E94 0000 		call start_transmission
+ 122:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_write_addr);
+ 537               	.LM46:
+ 538 0256 8EEE      		ldi r24,lo8(-18)
+ 539 0258 0E94 0000 		call send_addr
+ 123:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(out_msb);
+ 541               	.LM47:
+ 542 025c 86EF      		ldi r24,lo8(-10)
+ 543 025e 0E94 0000 		call send_data
+ 124:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(out_lsb);
+ 545               	.LM48:
+ 546 0262 87EF      		ldi r24,lo8(-9)
+ 547 0264 0E94 0000 		call send_data
+ 125:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     restart();
+ 549               	.LM49:
+ 550 0268 0E94 0000 		call restart
+ 126:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_read_addr);
+ 552               	.LM50:
+ 553 026c 8FEE      		ldi r24,lo8(-17)
+ 554 026e 0E94 0000 		call send_addr
+ 127:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     msb = read_data(1);
+ 556               	.LM51:
+ 557 0272 81E0      		ldi r24,lo8(1)
+ 558 0274 90E0      		ldi r25,0
+ 559 0276 0E94 0000 		call read_data
+ 560 027a C82F      		mov r28,r24
+ 128:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     lsb = read_data(0);
+ 562               	.LM52:
+ 563 027c 80E0      		ldi r24,0
+ 564 027e 90E0      		ldi r25,0
+ 565 0280 0E94 0000 		call read_data
+ 566 0284 182F      		mov r17,r24
+ 129:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     end_transmission();
+ 568               	.LM53:
+ 569 0286 0E94 0000 		call end_transmission
+ 570               	.LBB32:
+ 571               	.LBB33:
+ 573               	.Ltext11:
+ 575               	.LM54:
+ 576 028a 8FEC      		ldi r24,lo8(1999)
+ 577 028c 97E0      		ldi r25,hi8(1999)
+ 578 028e 0197      		1: sbiw r24,1
+ 579 0290 01F4      		brne 1b
+ 580 0292 00C0      		rjmp .
+ 581 0294 0000      		nop
+ 582               	.LBE33:
+ 583               	.LBE32:
+ 585               	.Ltext12:
+ 130:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     _delay_ms(1);
+ 131:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     start_transmission();
+ 587               	.LM55:
+ 588 0296 0E94 0000 		call start_transmission
+ 132:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_write_addr);
+ 590               	.LM56:
+ 591 029a 8EEE      		ldi r24,lo8(-18)
+ 592 029c 0E94 0000 		call send_addr
+ 133:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_data(out_xlsb);
+ 594               	.LM57:
+ 595 02a0 88EF      		ldi r24,lo8(-8)
+ 596 02a2 0E94 0000 		call send_data
+ 134:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     restart();
+ 598               	.LM58:
+ 599 02a6 0E94 0000 		call restart
+ 135:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     send_addr(bmp180_read_addr);
+ 601               	.LM59:
+ 602 02aa 8FEE      		ldi r24,lo8(-17)
+ 603 02ac 0E94 0000 		call send_addr
+ 136:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     xlsb = read_data(0);
+ 605               	.LM60:
+ 606 02b0 80E0      		ldi r24,0
+ 607 02b2 90E0      		ldi r25,0
+ 608 02b4 0E94 0000 		call read_data
+ 609 02b8 D82F      		mov r29,r24
+ 137:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     end_transmission();
+ 611               	.LM61:
+ 612 02ba 0E94 0000 		call end_transmission
+ 138:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+ 139:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     UP = ((unsigned long) msb << 16 | (unsigned long) lsb << 8 | (unsigned long) xlsb) >> (8 - bmp_
+ 614               	.LM62:
+ 615 02be 812F      		mov r24,r17
+ 616 02c0 90E0      		ldi r25,0
+ 617 02c2 A0E0      		ldi r26,0
+ 618 02c4 B0E0      		ldi r27,0
+ 619 02c6 6627      		clr r22
+ 620 02c8 782F      		mov r23,r24
+ 621 02ca 892F      		mov r24,r25
+ 622 02cc 9A2F      		mov r25,r26
+ 623 02ce 8C2B      		or r24,r28
+ 624 02d0 6D2B      		or r22,r29
+ 625 02d2 28E0      		ldi r18,lo8(8)
+ 626 02d4 30E0      		ldi r19,0
+ 627 02d6 4091 0000 		lds r20,bmp_180
+ 628 02da 5091 0000 		lds r21,bmp_180+1
+ 629 02de 241B      		sub r18,r20
+ 630 02e0 350B      		sbc r19,r21
+ 631 02e2 00C0      		rjmp 2f
+ 632               		1:
+ 633 02e4 9695      		lsr r25
+ 634 02e6 8795      		ror r24
+ 635 02e8 7795      		ror r23
+ 636 02ea 6795      		ror r22
+ 637               		2:
+ 638 02ec 2A95      		dec r18
+ 639 02ee 02F4      		brpl 1b
+ 640               	/* epilogue start */
+ 140:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     return (long) UP;
+ 141:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 642               	.LM63:
+ 643 02f0 DF91      		pop r29
+ 644 02f2 CF91      		pop r28
+ 645 02f4 1F91      		pop r17
+ 646 02f6 0895      		ret
+ 653               	.Lscope4:
+ 655               	.global	calculate_pressure
+ 657               	calculate_pressure:
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void calculate_pressure() {
+ 659               	.LM64:
+ 660               	.LFBB5:
+ 661 02f8 3F92      		push r3
+ 662 02fa 4F92      		push r4
+ 663 02fc 5F92      		push r5
+ 664 02fe 6F92      		push r6
+ 665 0300 7F92      		push r7
+ 666 0302 8F92      		push r8
+ 667 0304 9F92      		push r9
+ 668 0306 AF92      		push r10
+ 669 0308 BF92      		push r11
+ 670 030a CF92      		push r12
+ 671 030c DF92      		push r13
+ 672 030e EF92      		push r14
+ 673 0310 FF92      		push r15
+ 674 0312 0F93      		push r16
+ 675 0314 1F93      		push r17
+ 676 0316 CF93      		push r28
+ 677 0318 DF93      		push r29
+ 678 031a CDB7      		in r28,__SP_L__
+ 679 031c DEB7      		in r29,__SP_H__
+ 680 031e 2897      		sbiw r28,8
+ 681 0320 0FB6      		in __tmp_reg__,__SREG__
+ 682 0322 F894      		cli
+ 683 0324 DEBF      		out __SP_H__,r29
+ 684 0326 0FBE      		out __SREG__,__tmp_reg__
+ 685 0328 CDBF      		out __SP_L__,r28
+ 686               	/* prologue: function */
+ 687               	/* frame size = 8 */
+ 688               	/* stack size = 25 */
+ 689               	.L__stack_usage = 25
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     UP = read_pressure();
+ 691               	.LM65:
+ 692 032a 0E94 0000 		call read_pressure
+ 693 032e 6D83      		std Y+5,r22
+ 694 0330 7E83      		std Y+6,r23
+ 695 0332 8F83      		std Y+7,r24
+ 696 0334 9887      		std Y+8,r25
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B6 = bmp_180.calib_coeffs.B5 - 4000;
+ 698               	.LM66:
+ 699 0336 8090 0000 		lds r8,bmp_180+38
+ 700 033a 9090 0000 		lds r9,bmp_180+38+1
+ 701 033e A090 0000 		lds r10,bmp_180+38+2
+ 702 0342 B090 0000 		lds r11,bmp_180+38+3
+ 703 0346 80EA      		ldi r24,-96
+ 704 0348 881A      		sub r8,r24
+ 705 034a 8FE0      		ldi r24,15
+ 706 034c 980A      		sbc r9,r24
+ 707 034e A108      		sbc r10,__zero_reg__
+ 708 0350 B108      		sbc r11,__zero_reg__
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (bmp_180.calib_coeffs.B2 * (B6 * B6 >> 12)) >> 11;
+ 710               	.LM67:
+ 711 0352 A501      		movw r20,r10
+ 712 0354 9401      		movw r18,r8
+ 713 0356 C501      		movw r24,r10
+ 714 0358 B401      		movw r22,r8
+ 715 035a 0E94 0000 		call __mulsi3
+ 716 035e 2B01      		movw r4,r22
+ 717 0360 3C01      		movw r6,r24
+ 718 0362 FCE0      		ldi r31,12
+ 719               		1:
+ 720 0364 7594      		asr r7
+ 721 0366 6794      		ror r6
+ 722 0368 5794      		ror r5
+ 723 036a 4794      		ror r4
+ 724 036c FA95      		dec r31
+ 725 036e 01F4      		brne 1b
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B3 = ((((long)bmp_180.calib_coeffs.AC1 * 4 + X3) << bmp_180.mode) + 2) / 4;
+ 727               	.LM68:
+ 728 0370 0091 0000 		lds r16,bmp_180+22
+ 729 0374 1091 0000 		lds r17,bmp_180+22+1
+ 730 0378 3090 0000 		lds r3,bmp_180
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = bmp_180.calib_coeffs.AC3 * B6 >> 13;
+ 732               	.LM69:
+ 733 037c A091 0000 		lds r26,bmp_180+26
+ 734 0380 B091 0000 		lds r27,bmp_180+26+1
+ 735 0384 0E94 0000 		call __mulshisi3
+ 736 0388 6B01      		movw r12,r22
+ 737 038a 7C01      		movw r14,r24
+ 738 038c ADE0      		ldi r26,13
+ 739               		1:
+ 740 038e F594      		asr r15
+ 741 0390 E794      		ror r14
+ 742 0392 D794      		ror r13
+ 743 0394 C794      		ror r12
+ 744 0396 AA95      		dec r26
+ 745 0398 01F4      		brne 1b
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = (bmp_180.calib_coeffs.B1 * (B6 * B6 >> 12)) >> 16;
+ 747               	.LM70:
+ 748 039a A091 0000 		lds r26,bmp_180+34
+ 749 039e B091 0000 		lds r27,bmp_180+34+1
+ 750 03a2 A301      		movw r20,r6
+ 751 03a4 9201      		movw r18,r4
+ 752 03a6 0E94 0000 		call __mulshisi3
+ 753 03aa BB27      		clr r27
+ 754 03ac 97FD      		sbrc r25,7
+ 755 03ae B095      		com r27
+ 756 03b0 AB2F      		mov r26,r27
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X3 = ((X1 + X2) + 2) >> 2;
+ 758               	.LM71:
+ 759 03b2 C80E      		add r12,r24
+ 760 03b4 D91E      		adc r13,r25
+ 761 03b6 EA1E      		adc r14,r26
+ 762 03b8 FB1E      		adc r15,r27
+ 763 03ba 92E0      		ldi r25,2
+ 764 03bc C90E      		add r12,r25
+ 765 03be D11C      		adc r13,__zero_reg__
+ 766 03c0 E11C      		adc r14,__zero_reg__
+ 767 03c2 F11C      		adc r15,__zero_reg__
+ 768 03c4 82E0      		ldi r24,2
+ 769               		1:
+ 770 03c6 F594      		asr r15
+ 771 03c8 E794      		ror r14
+ 772 03ca D794      		ror r13
+ 773 03cc C794      		ror r12
+ 774 03ce 8A95      		dec r24
+ 775 03d0 01F4      		brne 1b
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B4 = bmp_180.calib_coeffs.AC4 * (unsigned long) (X3 + 32768) >> 15;
+ 777               	.LM72:
+ 778 03d2 A0E8      		ldi r26,-128
+ 779 03d4 DA0E      		add r13,r26
+ 780 03d6 E11C      		adc r14,__zero_reg__
+ 781 03d8 F11C      		adc r15,__zero_reg__
+ 782 03da A091 0000 		lds r26,bmp_180+28
+ 783 03de B091 0000 		lds r27,bmp_180+28+1
+ 784 03e2 A701      		movw r20,r14
+ 785 03e4 9601      		movw r18,r12
+ 786 03e6 0E94 0000 		call __muluhisi3
+ 787 03ea DC01      		movw r26,r24
+ 788 03ec CB01      		movw r24,r22
+ 789 03ee 2FE0      		ldi r18,15
+ 790               		1:
+ 791 03f0 B695      		lsr r27
+ 792 03f2 A795      		ror r26
+ 793 03f4 9795      		ror r25
+ 794 03f6 8795      		ror r24
+ 795 03f8 2A95      		dec r18
+ 796 03fa 01F4      		brne 1b
+ 797 03fc 8983      		std Y+1,r24
+ 798 03fe 9A83      		std Y+2,r25
+ 799 0400 AB83      		std Y+3,r26
+ 800 0402 BC83      		std Y+4,r27
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B3 = ((((long)bmp_180.calib_coeffs.AC1 * 4 + X3) << bmp_180.mode) + 2) / 4;
+ 802               	.LM73:
+ 803 0404 6801      		movw r12,r16
+ 804 0406 EE24      		clr r14
+ 805 0408 D7FC      		sbrc r13,7
+ 806 040a E094      		com r14
+ 807 040c FE2C      		mov r15,r14
+ 808 040e 32E0      		ldi r19,2
+ 809               		1:
+ 810 0410 CC0C      		lsl r12
+ 811 0412 DD1C      		rol r13
+ 812 0414 EE1C      		rol r14
+ 813 0416 FF1C      		rol r15
+ 814 0418 3A95      		dec r19
+ 815 041a 01F4      		brne 1b
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (bmp_180.calib_coeffs.B2 * (B6 * B6 >> 12)) >> 11;
+ 817               	.LM74:
+ 818 041c A091 0000 		lds r26,bmp_180+36
+ 819 0420 B091 0000 		lds r27,bmp_180+36+1
+ 820 0424 A301      		movw r20,r6
+ 821 0426 9201      		movw r18,r4
+ 822 0428 0E94 0000 		call __mulshisi3
+ 823 042c 2B01      		movw r4,r22
+ 824 042e 3C01      		movw r6,r24
+ 825 0430 4BE0      		ldi r20,11
+ 826               		1:
+ 827 0432 7594      		asr r7
+ 828 0434 6794      		ror r6
+ 829 0436 5794      		ror r5
+ 830 0438 4794      		ror r4
+ 831 043a 4A95      		dec r20
+ 832 043c 01F4      		brne 1b
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = bmp_180.calib_coeffs.AC2 * B6 >> 11;
+ 834               	.LM75:
+ 835 043e A091 0000 		lds r26,bmp_180+24
+ 836 0442 B091 0000 		lds r27,bmp_180+24+1
+ 837 0446 A501      		movw r20,r10
+ 838 0448 9401      		movw r18,r8
+ 839 044a 0E94 0000 		call __mulshisi3
+ 840 044e 5BE0      		ldi r21,11
+ 841               		1:
+ 842 0450 9595      		asr r25
+ 843 0452 8795      		ror r24
+ 844 0454 7795      		ror r23
+ 845 0456 6795      		ror r22
+ 846 0458 5A95      		dec r21
+ 847 045a 01F4      		brne 1b
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X3 = X1 + X2;
+ 849               	.LM76:
+ 850 045c 460E      		add r4,r22
+ 851 045e 571E      		adc r5,r23
+ 852 0460 681E      		adc r6,r24
+ 853 0462 791E      		adc r7,r25
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B3 = ((((long)bmp_180.calib_coeffs.AC1 * 4 + X3) << bmp_180.mode) + 2) / 4;
+ 855               	.LM77:
+ 856 0464 C40C      		add r12,r4
+ 857 0466 D51C      		adc r13,r5
+ 858 0468 E61C      		adc r14,r6
+ 859 046a F71C      		adc r15,r7
+ 860 046c 032C      		mov r0,r3
+ 861 046e 00C0      		rjmp 2f
+ 862               		1:
+ 863 0470 CC0C      		lsl r12
+ 864 0472 DD1C      		rol r13
+ 865 0474 EE1C      		rol r14
+ 866 0476 FF1C      		rol r15
+ 867               		2:
+ 868 0478 0A94      		dec r0
+ 869 047a 02F4      		brpl 1b
+ 870 047c 92E0      		ldi r25,2
+ 871 047e C90E      		add r12,r25
+ 872 0480 D11C      		adc r13,__zero_reg__
+ 873 0482 E11C      		adc r14,__zero_reg__
+ 874 0484 F11C      		adc r15,__zero_reg__
+ 875 0486 C701      		movw r24,r14
+ 876 0488 B601      		movw r22,r12
+ 877 048a 24E0      		ldi r18,lo8(4)
+ 878 048c 30E0      		ldi r19,0
+ 879 048e 40E0      		ldi r20,0
+ 880 0490 50E0      		ldi r21,0
+ 881 0492 0E94 0000 		call __divmodsi4
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     B7 = ((unsigned long) UP - B3) * (50000UL >> bmp_180.mode);
+ 883               	.LM78:
+ 884 0496 8D81      		ldd r24,Y+5
+ 885 0498 9E81      		ldd r25,Y+6
+ 886 049a AF81      		ldd r26,Y+7
+ 887 049c B885      		ldd r27,Y+8
+ 888 049e 821B      		sub r24,r18
+ 889 04a0 930B      		sbc r25,r19
+ 890 04a2 A40B      		sbc r26,r20
+ 891 04a4 B50B      		sbc r27,r21
+ 892 04a6 8D83      		std Y+5,r24
+ 893 04a8 9E83      		std Y+6,r25
+ 894 04aa AF83      		std Y+7,r26
+ 895 04ac B887      		std Y+8,r27
+ 896 04ae 60E5      		ldi r22,lo8(80)
+ 897 04b0 73EC      		ldi r23,lo8(-61)
+ 898 04b2 80E0      		ldi r24,0
+ 899 04b4 90E0      		ldi r25,0
+ 900 04b6 00C0      		rjmp 2f
+ 901               		1:
+ 902 04b8 9695      		lsr r25
+ 903 04ba 8795      		ror r24
+ 904 04bc 7795      		ror r23
+ 905 04be 6795      		ror r22
+ 906               		2:
+ 907 04c0 3A94      		dec r3
+ 908 04c2 02F4      		brpl 1b
+ 909 04c4 2D81      		ldd r18,Y+5
+ 910 04c6 3E81      		ldd r19,Y+6
+ 911 04c8 4F81      		ldd r20,Y+7
+ 912 04ca 5885      		ldd r21,Y+8
+ 913 04cc 0E94 0000 		call __mulsi3
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     if (B7 < 0x80000000UL)
+ 915               	.LM79:
+ 916 04d0 97FD      		sbrc r25,7
+ 917 04d2 00C0      		rjmp .L13
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         _pressure = (B7 * 2) / B4;
+ 919               	.LM80:
+ 920 04d4 660F      		lsl r22
+ 921 04d6 771F      		rol r23
+ 922 04d8 881F      		rol r24
+ 923 04da 991F      		rol r25
+ 924 04dc 2981      		ldd r18,Y+1
+ 925 04de 3A81      		ldd r19,Y+2
+ 926 04e0 4B81      		ldd r20,Y+3
+ 927 04e2 5C81      		ldd r21,Y+4
+ 928 04e4 0E94 0000 		call __udivmodsi4
+ 929 04e8 4901      		movw r8,r18
+ 930 04ea 5A01      		movw r10,r20
+ 931 04ec 00C0      		rjmp .L14
+ 932               	.L13:
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         _pressure = (B7 / B4) * 2;
+ 934               	.LM81:
+ 935 04ee 2981      		ldd r18,Y+1
+ 936 04f0 3A81      		ldd r19,Y+2
+ 937 04f2 4B81      		ldd r20,Y+3
+ 938 04f4 5C81      		ldd r21,Y+4
+ 939 04f6 0E94 0000 		call __udivmodsi4
+ 940 04fa 4901      		movw r8,r18
+ 941 04fc 5A01      		movw r10,r20
+ 942 04fe 880C      		lsl r8
+ 943 0500 991C      		rol r9
+ 944 0502 AA1C      		rol r10
+ 945 0504 BB1C      		rol r11
+ 946               	.L14:
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (_pressure >> 8) * (_pressure >> 8);
+ 948               	.LM82:
+ 949 0506 9927      		clr r25
+ 950 0508 B7FC      		sbrc r11,7
+ 951 050a 9A95      		dec r25
+ 952 050c 8B2D      		mov r24,r11
+ 953 050e 7A2D      		mov r23,r10
+ 954 0510 692D      		mov r22,r9
+ 955 0512 9B01      		movw r18,r22
+ 956 0514 AC01      		movw r20,r24
+ 957 0516 0E94 0000 		call __mulsi3
+ 958 051a 9B01      		movw r18,r22
+ 959 051c AC01      		movw r20,r24
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X1 = (X1 * 3038) >> 16;
+ 961               	.LM83:
+ 962 051e AEED      		ldi r26,lo8(-34)
+ 963 0520 BBE0      		ldi r27,lo8(11)
+ 964 0522 0E94 0000 		call __muluhisi3
+ 965 0526 6C01      		movw r12,r24
+ 966 0528 FF24      		clr r15
+ 967 052a D7FC      		sbrc r13,7
+ 968 052c F094      		com r15
+ 969 052e EF2C      		mov r14,r15
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     X2 = (-7357 * _pressure) >> 16;
+ 971               	.LM84:
+ 972 0530 A3E4      		ldi r26,lo8(67)
+ 973 0532 B3EE      		ldi r27,lo8(-29)
+ 974 0534 A501      		movw r20,r10
+ 975 0536 9401      		movw r18,r8
+ 976 0538 0E94 0000 		call __mulohisi3
+ 977 053c BB27      		clr r27
+ 978 053e 97FD      		sbrc r25,7
+ 979 0540 B095      		com r27
+ 980 0542 AB2F      		mov r26,r27
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.pressure = _pressure + ((X1 + X2 + 3791) >> 4);
+ 982               	.LM85:
+ 983 0544 C80E      		add r12,r24
+ 984 0546 D91E      		adc r13,r25
+ 985 0548 EA1E      		adc r14,r26
+ 986 054a FB1E      		adc r15,r27
+ 987 054c 9FEC      		ldi r25,-49
+ 988 054e C90E      		add r12,r25
+ 989 0550 9EE0      		ldi r25,14
+ 990 0552 D91E      		adc r13,r25
+ 991 0554 E11C      		adc r14,__zero_reg__
+ 992 0556 F11C      		adc r15,__zero_reg__
+ 993 0558 64E0      		ldi r22,4
+ 994               		1:
+ 995 055a F594      		asr r15
+ 996 055c E794      		ror r14
+ 997 055e D794      		ror r13
+ 998 0560 C794      		ror r12
+ 999 0562 6A95      		dec r22
+ 1000 0564 01F4      		brne 1b
+ 1001 0566 C80C      		add r12,r8
+ 1002 0568 D91C      		adc r13,r9
+ 1003 056a EA1C      		adc r14,r10
+ 1004 056c FB1C      		adc r15,r11
+ 1005 056e C092 0000 		sts bmp_180+14,r12
+ 1006 0572 D092 0000 		sts bmp_180+14+1,r13
+ 1007 0576 E092 0000 		sts bmp_180+14+2,r14
+ 1008 057a F092 0000 		sts bmp_180+14+3,r15
+ 1009               	/* epilogue start */
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 1011               	.LM86:
+ 1012 057e 2896      		adiw r28,8
+ 1013 0580 0FB6      		in __tmp_reg__,__SREG__
+ 1014 0582 F894      		cli
+ 1015 0584 DEBF      		out __SP_H__,r29
+ 1016 0586 0FBE      		out __SREG__,__tmp_reg__
+ 1017 0588 CDBF      		out __SP_L__,r28
+ 1018 058a DF91      		pop r29
+ 1019 058c CF91      		pop r28
+ 1020 058e 1F91      		pop r17
+ 1021 0590 0F91      		pop r16
+ 1022 0592 FF90      		pop r15
+ 1023 0594 EF90      		pop r14
+ 1024 0596 DF90      		pop r13
+ 1025 0598 CF90      		pop r12
+ 1026 059a BF90      		pop r11
+ 1027 059c AF90      		pop r10
+ 1028 059e 9F90      		pop r9
+ 1029 05a0 8F90      		pop r8
+ 1030 05a2 7F90      		pop r7
+ 1031 05a4 6F90      		pop r6
+ 1032 05a6 5F90      		pop r5
+ 1033 05a8 4F90      		pop r4
+ 1034 05aa 3F90      		pop r3
+ 1035 05ac 0895      		ret
+ 1043               	.Lscope5:
+ 1045               	.global	read_coeffs
+ 1047               	read_coeffs:
+ 142:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+ 143:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void read_coeffs() {
+ 1049               	.LM87:
+ 1050               	.LFBB6:
+ 1051 05ae DF92      		push r13
+ 1052 05b0 EF92      		push r14
+ 1053 05b2 FF92      		push r15
+ 1054 05b4 0F93      		push r16
+ 1055 05b6 1F93      		push r17
+ 1056 05b8 CF93      		push r28
+ 1057 05ba DF93      		push r29
+ 1058 05bc CDB7      		in r28,__SP_L__
+ 1059 05be DEB7      		in r29,__SP_H__
+ 1060 05c0 6697      		sbiw r28,22
+ 1061 05c2 0FB6      		in __tmp_reg__,__SREG__
+ 1062 05c4 F894      		cli
+ 1063 05c6 DEBF      		out __SP_H__,r29
+ 1064 05c8 0FBE      		out __SREG__,__tmp_reg__
+ 1065 05ca CDBF      		out __SP_L__,r28
+ 1066               	/* prologue: function */
+ 1067               	/* frame size = 22 */
+ 1068               	/* stack size = 29 */
+ 1069               	.L__stack_usage = 29
+ 1070 05cc 00E0      		ldi r16,lo8(bmp180_coeff_addr)
+ 1071 05ce 10E0      		ldi r17,hi8(bmp180_coeff_addr)
+ 1072 05d0 CE01      		movw r24,r28
+ 1073 05d2 0196      		adiw r24,1
+ 1074 05d4 7C01      		movw r14,r24
+ 1075               	.L17:
+ 1076               	.LBB34:
+ 1077               	.LBB35:
+ 144:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+ 145:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     uint16_t coeffs[11];
+ 146:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+ 147:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     for (short i = 0; i < 11; i++) {
+ 148:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         start_transmission();
+ 1079               	.LM88:
+ 1080 05d6 0E94 0000 		call start_transmission
+ 149:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         send_addr(bmp180_write_addr);
+ 1082               	.LM89:
+ 1083 05da 8EEE      		ldi r24,lo8(-18)
+ 1084 05dc 0E94 0000 		call send_addr
+ 150:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         send_data((bmp180_coeff_addr[i] & 0xFF00) >> 8);
+ 1086               	.LM90:
+ 1087 05e0 F801      		movw r30,r16
+ 1088 05e2 D080      		ld r13,Z
+ 1089 05e4 8181      		ldd r24,Z+1
+ 1090 05e6 0E5F      		subi r16,-2
+ 1091 05e8 1F4F      		sbci r17,-1
+ 1092 05ea 0E94 0000 		call send_data
+ 151:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         send_data(bmp180_coeff_addr[i] & 0x00FF);
+ 1094               	.LM91:
+ 1095 05ee 8D2D      		mov r24,r13
+ 1096 05f0 0E94 0000 		call send_data
+ 152:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         restart();
+ 1098               	.LM92:
+ 1099 05f4 0E94 0000 		call restart
+ 153:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         send_addr(bmp180_read_addr);
+ 1101               	.LM93:
+ 1102 05f8 8FEE      		ldi r24,lo8(-17)
+ 1103 05fa 0E94 0000 		call send_addr
+ 154:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         coeffs[i] = read_data(1) << 8;
+ 1105               	.LM94:
+ 1106 05fe 81E0      		ldi r24,lo8(1)
+ 1107 0600 90E0      		ldi r25,0
+ 1108 0602 0E94 0000 		call read_data
+ 1109 0606 D82E      		mov r13,r24
+ 155:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         coeffs[i] |= read_data(0);
+ 1111               	.LM95:
+ 1112 0608 80E0      		ldi r24,0
+ 1113 060a 90E0      		ldi r25,0
+ 1114 060c 0E94 0000 		call read_data
+ 154:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         coeffs[i] = read_data(1) << 8;
+ 1116               	.LM96:
+ 1117 0610 2D2D      		mov r18,r13
+ 1118 0612 30E0      		ldi r19,0
+ 1119 0614 322F      		mov r19,r18
+ 1120 0616 2227      		clr r18
+ 1122               	.LM97:
+ 1123 0618 282B      		or r18,r24
+ 1124 061a F701      		movw r30,r14
+ 1125 061c 2193      		st Z+,r18
+ 1126 061e 3193      		st Z+,r19
+ 1127 0620 7F01      		movw r14,r30
+ 156:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         end_transmission();
+ 1129               	.LM98:
+ 1130 0622 0E94 0000 		call end_transmission
+ 1131               	.LBB36:
+ 1132               	.LBB37:
+ 1134               	.Ltext13:
+ 1136               	.LM99:
+ 1137 0626 8FEC      		ldi r24,lo8(1999)
+ 1138 0628 97E0      		ldi r25,hi8(1999)
+ 1139 062a 0197      		1: sbiw r24,1
+ 1140 062c 01F4      		brne 1b
+ 1141 062e 00C0      		rjmp .
+ 1142 0630 0000      		nop
+ 1143               	.LBE37:
+ 1144               	.LBE36:
+ 1145               	.LBE35:
+ 1147               	.Ltext14:
+ 147:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     for (short i = 0; i < 11; i++) {
+ 1149               	.LM100:
+ 1150 0632 90E0      		ldi r25,hi8(bmp180_coeff_addr+22)
+ 1151 0634 0030      		cpi r16,lo8(bmp180_coeff_addr+22)
+ 1152 0636 1907      		cpc r17,r25
+ 1153 0638 01F4      		brne .L17
+ 1154               	.LBE34:
+ 157:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****         _delay_ms(1);
+ 158:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     }
+ 159:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+ 160:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.AC1 = (short) coeffs[0];
+ 1156               	.LM101:
+ 1157 063a 8981      		ldd r24,Y+1
+ 1158 063c 9A81      		ldd r25,Y+2
+ 1159 063e 9093 0000 		sts bmp_180+22+1,r25
+ 1160 0642 8093 0000 		sts bmp_180+22,r24
+ 161:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.AC2 = (short) coeffs[1];
+ 1162               	.LM102:
+ 1163 0646 8B81      		ldd r24,Y+3
+ 1164 0648 9C81      		ldd r25,Y+4
+ 1165 064a 9093 0000 		sts bmp_180+24+1,r25
+ 1166 064e 8093 0000 		sts bmp_180+24,r24
+ 162:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.AC3 = (short) coeffs[2];
+ 1168               	.LM103:
+ 1169 0652 8D81      		ldd r24,Y+5
+ 1170 0654 9E81      		ldd r25,Y+6
+ 1171 0656 9093 0000 		sts bmp_180+26+1,r25
+ 1172 065a 8093 0000 		sts bmp_180+26,r24
+ 163:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.AC4 = (uint16_t) coeffs[3];
+ 1174               	.LM104:
+ 1175 065e 8F81      		ldd r24,Y+7
+ 1176 0660 9885      		ldd r25,Y+8
+ 1177 0662 9093 0000 		sts bmp_180+28+1,r25
+ 1178 0666 8093 0000 		sts bmp_180+28,r24
+ 164:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.AC5 = (uint16_t) coeffs[4];
+ 1180               	.LM105:
+ 1181 066a 8985      		ldd r24,Y+9
+ 1182 066c 9A85      		ldd r25,Y+10
+ 1183 066e 9093 0000 		sts bmp_180+30+1,r25
+ 1184 0672 8093 0000 		sts bmp_180+30,r24
+ 165:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.AC6 = (uint16_t) coeffs[5];
+ 1186               	.LM106:
+ 1187 0676 8B85      		ldd r24,Y+11
+ 1188 0678 9C85      		ldd r25,Y+12
+ 1189 067a 9093 0000 		sts bmp_180+32+1,r25
+ 1190 067e 8093 0000 		sts bmp_180+32,r24
+ 166:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.B1 = (short) coeffs[6];
+ 1192               	.LM107:
+ 1193 0682 8D85      		ldd r24,Y+13
+ 1194 0684 9E85      		ldd r25,Y+14
+ 1195 0686 9093 0000 		sts bmp_180+34+1,r25
+ 1196 068a 8093 0000 		sts bmp_180+34,r24
+ 167:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.B2 = (short) coeffs[7];
+ 1198               	.LM108:
+ 1199 068e 8F85      		ldd r24,Y+15
+ 1200 0690 9889      		ldd r25,Y+16
+ 1201 0692 9093 0000 		sts bmp_180+36+1,r25
+ 1202 0696 8093 0000 		sts bmp_180+36,r24
+ 168:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.MB = (short) coeffs[8];
+ 1204               	.LM109:
+ 1205 069a 8989      		ldd r24,Y+17
+ 1206 069c 9A89      		ldd r25,Y+18
+ 1207 069e 9093 0000 		sts bmp_180+42+1,r25
+ 1208 06a2 8093 0000 		sts bmp_180+42,r24
+ 169:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.MC = (short) coeffs[9];
+ 1210               	.LM110:
+ 1211 06a6 8B89      		ldd r24,Y+19
+ 1212 06a8 9C89      		ldd r25,Y+20
+ 1213 06aa 9093 0000 		sts bmp_180+44+1,r25
+ 1214 06ae 8093 0000 		sts bmp_180+44,r24
+ 170:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.calib_coeffs.MD = (short) coeffs[10];
+ 1216               	.LM111:
+ 1217 06b2 8D89      		ldd r24,Y+21
+ 1218 06b4 9E89      		ldd r25,Y+22
+ 1219 06b6 9093 0000 		sts bmp_180+46+1,r25
+ 1220 06ba 8093 0000 		sts bmp_180+46,r24
+ 1221               	/* epilogue start */
+ 171:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     
+ 172:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 1223               	.LM112:
+ 1224 06be 6696      		adiw r28,22
+ 1225 06c0 0FB6      		in __tmp_reg__,__SREG__
+ 1226 06c2 F894      		cli
+ 1227 06c4 DEBF      		out __SP_H__,r29
+ 1228 06c6 0FBE      		out __SREG__,__tmp_reg__
+ 1229 06c8 CDBF      		out __SP_L__,r28
+ 1230 06ca DF91      		pop r29
+ 1231 06cc CF91      		pop r28
+ 1232 06ce 1F91      		pop r17
+ 1233 06d0 0F91      		pop r16
+ 1234 06d2 FF90      		pop r15
+ 1235 06d4 EF90      		pop r14
+ 1236 06d6 DF90      		pop r13
+ 1237 06d8 0895      		ret
+ 1242               	.Lscope6:
+ 1245               	.global	init_sensor
+ 1247               	init_sensor:
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void init_sensor(short mode) {
+ 1249               	.LM113:
+ 1250               	.LFBB7:
+ 1251 06da CF93      		push r28
+ 1252 06dc DF93      		push r29
+ 1253               	/* prologue: function */
+ 1254               	/* frame size = 0 */
+ 1255               	/* stack size = 2 */
+ 1256               	.L__stack_usage = 2
+ 1257 06de EC01      		movw r28,r24
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     init_twi();
+ 1259               	.LM114:
+ 1260 06e0 0E94 0000 		call init_twi
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     read_coeffs();
+ 1262               	.LM115:
+ 1263 06e4 0E94 0000 		call read_coeffs
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     bmp_180.mode = mode;
+ 1265               	.LM116:
+ 1266 06e8 D093 0000 		sts bmp_180+1,r29
+ 1267 06ec C093 0000 		sts bmp_180,r28
+ 1268               	/* epilogue start */
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 1270               	.LM117:
+ 1271 06f0 DF91      		pop r29
+ 1272 06f2 CF91      		pop r28
+ 1273 06f4 0895      		ret
+ 1275               	.Lscope7:
+ 1277               	.global	calculate
+ 1279               	calculate:
+ 173:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+ 174:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** void calculate() {
+ 1281               	.LM118:
+ 1282               	.LFBB8:
+ 1283               	/* prologue: function */
+ 1284               	/* frame size = 0 */
+ 1285               	/* stack size = 0 */
+ 1286               	.L__stack_usage = 0
+ 175:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     calculate_temperature();
+ 1288               	.LM119:
+ 1289 06f6 0E94 0000 		call calculate_temperature
+ 176:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     calculate_pressure();
+ 1291               	.LM120:
+ 1292 06fa 0E94 0000 		call calculate_pressure
+ 177:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     calculate_altitude();
+ 1294               	.LM121:
+ 1295 06fe 0C94 0000 		jmp calculate_altitude
+ 1297               	.Lscope8:
+ 1299               	.global	get_temperature
+ 1301               	get_temperature:
+ 178:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 179:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** 
+ 180:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** float get_temperature() {
+ 1303               	.LM122:
+ 1304               	.LFBB9:
+ 1305               	/* prologue: function */
+ 1306               	/* frame size = 0 */
+ 1307               	/* stack size = 0 */
+ 1308               	.L__stack_usage = 0
+ 181:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c ****     return (float) bmp_180.temperature / 10;
+ 1310               	.LM123:
+ 1311 0702 6091 0000 		lds r22,bmp_180+10
+ 1312 0706 7091 0000 		lds r23,bmp_180+10+1
+ 1313 070a 8091 0000 		lds r24,bmp_180+10+2
+ 1314 070e 9091 0000 		lds r25,bmp_180+10+3
+ 1315 0712 0E94 0000 		call __floatsisf
+ 1316 0716 20E0      		ldi r18,0
+ 1317 0718 30E0      		ldi r19,0
+ 1318 071a 40E2      		ldi r20,lo8(32)
+ 1319 071c 51E4      		ldi r21,lo8(65)
+ 1320 071e 0E94 0000 		call __divsf3
+ 182:/Users/atakane/Documents/Electronics/IoClock/IoClock/bmp180.c **** }
+ 1322               	.LM124:
+ 1323 0722 0895      		ret
+ 1325               	.Lscope9:
+ 1326               	.global	bmp180_coeff_addr
+ 1327               		.section	.rodata
+ 1330               	bmp180_coeff_addr:
+ 1331 0000 ABAA      		.word	-21845
+ 1332 0002 ADAC      		.word	-21331
+ 1333 0004 AFAE      		.word	-20817
+ 1334 0006 B1B0      		.word	-20303
+ 1335 0008 B3B2      		.word	-19789
+ 1336 000a B5B4      		.word	-19275
+ 1337 000c B7B6      		.word	-18761
+ 1338 000e B9B8      		.word	-18247
+ 1339 0010 BBBA      		.word	-17733
+ 1340 0012 BDBC      		.word	-17219
+ 1341 0014 BFBE      		.word	-16705
+ 1342               		.comm	bmp_180,48,1
+ 1345               		.text
+ 1347               	.Letext0:
+ 1348               		.ident	"GCC: (GNU) 4.8.1"
+ 1349               	.global __do_copy_data
+ 1350               	.global __do_clear_bss
+DEFINED SYMBOLS
+                            *ABS*:00000000 bmp180.c
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:122    .text:00000000 calculate_altitude
+                            *COM*:00000030 bmp_180
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:169    .text:0000005a read_temperature
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:272    .text:000000d2 calculate_temperature
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:396    .text:000001c6 read_pressure
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:657    .text:000002f8 calculate_pressure
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:1047   .text:000005ae read_coeffs
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:1330   .rodata:00000000 bmp180_coeff_addr
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:1247   .text:000006da init_sensor
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:1279   .text:000006f6 calculate
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccQLhJW5.s:1301   .text:00000702 get_temperature
+
+UNDEFINED SYMBOLS
+__floatsisf
+__divsf3
+__subsf3
+__mulsf3
+pow
+start_transmission
+send_addr
+send_data
+end_transmission
+restart
+read_data
+__fixsfsi
+__muluhisi3
+__mulsi3
+__mulshisi3
+__divmodsi4
+__udivmodsi4
+__mulohisi3
+init_twi
+__do_copy_data
+__do_clear_bss

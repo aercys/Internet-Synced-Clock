@@ -1,0 +1,401 @@
+   1               		.file	"espwifi.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   8               		.text
+   9               	.Ltext0:
+ 117               		.section	.rodata.str1.1,"aMS",@progbits,1
+ 118               	.LC0:
+ 119 0000 4154 0D00 		.string	"AT\r"
+ 120               	.LC1:
+ 121 0004 4F4B 00   		.string	"OK"
+ 122               		.text
+ 124               	.global	init_wifi_module
+ 126               	init_wifi_module:
+   1:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //
+   2:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //  espwifi.c
+   3:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //  TemperatureServer
+   4:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //
+   5:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //  Created by Atakan ERCIYAS on 29/03/2017.
+   6:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //  Copyright © 2017 aercys. All rights reserved.
+   7:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** //
+   8:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** 
+   9:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** 
+  10:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include <stdio.h>
+  11:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include <avr/io.h>
+  12:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include <util/delay.h>
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include <string.h>
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include <stdlib.h>
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include "espwifi.h"
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** #include "uart.h"
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** 
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** 
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** short init_wifi_module(void) {
+ 128               	.LM0:
+ 129               	.LFBB1:
+ 130               	/* prologue: function */
+ 131               	/* frame size = 0 */
+ 132               	/* stack size = 0 */
+ 133               	.L__stack_usage = 0
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     uart_init(9600);
+ 135               	.LM1:
+ 136 0000 80E8      		ldi r24,lo8(-128)
+ 137 0002 95E2      		ldi r25,lo8(37)
+ 138 0004 0E94 0000 		call uart_init
+ 139               	.LBB4:
+ 140               	.LBB5:
+ 142               	.Ltext1:
+   1:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   6:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   9:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  12:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  17:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  21:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  33:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* $Id$ */
+  34:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  35:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  38:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  41:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  42:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  46:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \file */
+  47:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \code
+  49:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \endcode
+  53:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  54:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     used.
+  58:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  59:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  68:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  77:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  81:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** */
+  82:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  83:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  87:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  88:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  93:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  94:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  97:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  98:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+ 103:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 104:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /**
+ 105:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 107:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 109:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 112:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 114:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 120:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 125:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 129:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 132:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 140:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  */
+ 141:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** void
+ 142:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** {
+ 144:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	double __tmp ; 
+ 145:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 146:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 147:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 148:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 149:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 151:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 152:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 153:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 154:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 155:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 156:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 157:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 158:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#else
+ 159:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//round up by default
+ 160:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 161:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#endif
+ 162:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 163:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 144               	.LM2:
+ 145 0008 2FEF      		ldi r18,lo8(15999999)
+ 146 000a 83E2      		ldi r24,hi8(15999999)
+ 147 000c 94EF      		ldi r25,hlo8(15999999)
+ 148 000e 2150      		1: subi r18,1
+ 149 0010 8040      		sbci r24,0
+ 150 0012 9040      		sbci r25,0
+ 151 0014 01F4      		brne 1b
+ 152 0016 00C0      		rjmp .
+ 153 0018 0000      		nop
+ 154               	.LBE5:
+ 155               	.LBE4:
+ 157               	.Ltext2:
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     _delay_ms(10000);
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     printf(TEST_MODULE);
+ 159               	.LM3:
+ 160 001a 80E0      		ldi r24,lo8(.LC0)
+ 161 001c 90E0      		ldi r25,hi8(.LC0)
+ 162 001e 0E94 0000 		call puts
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     uart_getall("OK");
+ 164               	.LM4:
+ 165 0022 80E0      		ldi r24,lo8(.LC1)
+ 166 0024 90E0      		ldi r25,hi8(.LC1)
+ 167 0026 0E94 0000 		call uart_getall
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     return 1;
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** }
+ 169               	.LM5:
+ 170 002a 81E0      		ldi r24,lo8(1)
+ 171 002c 90E0      		ldi r25,0
+ 172 002e 0895      		ret
+ 174               	.Lscope1:
+ 175               		.section	.rodata.str1.1
+ 176               	.LC2:
+ 177 0007 4154 2B43 		.string	"AT+CWMODE=%d\r\n"
+ 177      574D 4F44 
+ 177      453D 2564 
+ 177      0D0A 00
+ 178               	.LC3:
+ 179 0016 4154 2B43 		.string	"AT+CIPMODE=%d\r\n"
+ 179      4950 4D4F 
+ 179      4445 3D25 
+ 179      640D 0A00 
+ 180               	.LC4:
+ 181 0026 4154 2B43 		.string	"AT+CIPMUX=%d\r\n"
+ 181      4950 4D55 
+ 181      583D 2564 
+ 181      0D0A 00
+ 182               	.LC5:
+ 183 0035 4154 2B43 		.string	"AT+CWJAP=\"%s\",\"%s\"\r\n"
+ 183      574A 4150 
+ 183      3D22 2573 
+ 183      222C 2225 
+ 183      7322 0D0A 
+ 184               		.text
+ 186               	.global	connect_wifi
+ 188               	connect_wifi:
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** 
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** short connect_wifi(unsigned char *ssid_name, unsigned char *ssid_password) {
+ 190               	.LM6:
+ 191               	.LFBB2:
+ 192 0030 0F93      		push r16
+ 193 0032 1F93      		push r17
+ 194 0034 CF93      		push r28
+ 195 0036 DF93      		push r29
+ 196 0038 00D0      		rcall .
+ 197 003a CDB7      		in r28,__SP_L__
+ 198 003c DEB7      		in r29,__SP_H__
+ 199               	/* prologue: function */
+ 200               	/* frame size = 2 */
+ 201               	/* stack size = 6 */
+ 202               	.L__stack_usage = 6
+ 203 003e 182F      		mov r17,r24
+ 204 0040 092F      		mov r16,r25
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     printf(CW_MODE, 1);
+ 206               	.LM7:
+ 207 0042 1F92      		push __zero_reg__
+ 208 0044 81E0      		ldi r24,lo8(1)
+ 209 0046 8F93      		push r24
+ 210 0048 20E0      		ldi r18,lo8(.LC2)
+ 211 004a 30E0      		ldi r19,hi8(.LC2)
+ 212 004c 3F93      		push r19
+ 213 004e 2F93      		push r18
+ 214 0050 6983      		std Y+1,r22
+ 215 0052 7A83      		std Y+2,r23
+ 216 0054 0E94 0000 		call printf
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     uart_getall("OK");
+ 218               	.LM8:
+ 219 0058 80E0      		ldi r24,lo8(.LC1)
+ 220 005a 90E0      		ldi r25,hi8(.LC1)
+ 221 005c 0E94 0000 		call uart_getall
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     printf(CIP_MODE, 0);
+ 223               	.LM9:
+ 224 0060 1F92      		push __zero_reg__
+ 225 0062 1F92      		push __zero_reg__
+ 226 0064 20E0      		ldi r18,lo8(.LC3)
+ 227 0066 30E0      		ldi r19,hi8(.LC3)
+ 228 0068 3F93      		push r19
+ 229 006a 2F93      		push r18
+ 230 006c 0E94 0000 		call printf
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     uart_getall("OK");
+ 232               	.LM10:
+ 233 0070 80E0      		ldi r24,lo8(.LC1)
+ 234 0072 90E0      		ldi r25,hi8(.LC1)
+ 235 0074 0E94 0000 		call uart_getall
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     printf(CIP_MUX, 0);
+ 237               	.LM11:
+ 238 0078 1F92      		push __zero_reg__
+ 239 007a 1F92      		push __zero_reg__
+ 240 007c 20E0      		ldi r18,lo8(.LC4)
+ 241 007e 30E0      		ldi r19,hi8(.LC4)
+ 242 0080 3F93      		push r19
+ 243 0082 2F93      		push r18
+ 244 0084 0E94 0000 		call printf
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     uart_getall("OK");
+ 246               	.LM12:
+ 247 0088 80E0      		ldi r24,lo8(.LC1)
+ 248 008a 90E0      		ldi r25,hi8(.LC1)
+ 249 008c 0E94 0000 		call uart_getall
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     printf(WIFI_CONNECT, ssid_name, ssid_password);
+ 251               	.LM13:
+ 252 0090 7A81      		ldd r23,Y+2
+ 253 0092 7F93      		push r23
+ 254 0094 6981      		ldd r22,Y+1
+ 255 0096 6F93      		push r22
+ 256 0098 0F93      		push r16
+ 257 009a 1F93      		push r17
+ 258 009c 80E0      		ldi r24,lo8(.LC5)
+ 259 009e 90E0      		ldi r25,hi8(.LC5)
+ 260 00a0 9F93      		push r25
+ 261 00a2 8F93      		push r24
+ 262 00a4 0E94 0000 		call printf
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     uart_getall("OK");
+ 264               	.LM14:
+ 265 00a8 80E0      		ldi r24,lo8(.LC1)
+ 266 00aa 90E0      		ldi r25,hi8(.LC1)
+ 267 00ac 0E94 0000 		call uart_getall
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c ****     return 1;
+ 269               	.LM15:
+ 270 00b0 0FB6      		in __tmp_reg__,__SREG__
+ 271 00b2 F894      		cli
+ 272 00b4 DEBF      		out __SP_H__,r29
+ 273 00b6 0FBE      		out __SREG__,__tmp_reg__
+ 274 00b8 CDBF      		out __SP_L__,r28
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/espwifi.c **** }
+ 276               	.LM16:
+ 277 00ba 81E0      		ldi r24,lo8(1)
+ 278 00bc 90E0      		ldi r25,0
+ 279               	/* epilogue start */
+ 280 00be 0F90      		pop __tmp_reg__
+ 281 00c0 0F90      		pop __tmp_reg__
+ 282 00c2 DF91      		pop r29
+ 283 00c4 CF91      		pop r28
+ 284 00c6 1F91      		pop r17
+ 285 00c8 0F91      		pop r16
+ 286 00ca 0895      		ret
+ 288               	.Lscope2:
+ 290               	.Letext0:
+ 291               		.ident	"GCC: (GNU) 4.8.1"
+ 292               	.global __do_copy_data
+DEFINED SYMBOLS
+                            *ABS*:00000000 espwifi.c
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:126    .text:00000000 init_wifi_module
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccgSxbIS.s:188    .text:00000030 connect_wifi
+
+UNDEFINED SYMBOLS
+uart_init
+puts
+uart_getall
+printf
+__do_copy_data

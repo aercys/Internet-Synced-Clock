@@ -1,0 +1,1382 @@
+   1               		.file	"lcd.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   8               		.text
+   9               	.Ltext0:
+ 106               	toggle_e:
+   1:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /****************************************************************************
+   2:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  Title:     HD44780U LCD library
+   3:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  Author:    Peter Fleury <pfleury@gmx.ch>  http://tinyurl.com/peterfleury
+   4:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  File:	    $Id: lcd.c,v 1.15.2.2 2015/01/17 12:16:05 peter Exp $
+   5:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  Software:  AVR-GCC 3.3 
+   6:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  Target:    any AVR device, memory mapped mode only for AT90S4414/8515/Mega
+   7:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+   8:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  DESCRIPTION
+   9:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        Basic routines for interfacing a HD44780U-based text lcd display
+  10:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  11:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        Originally based on Volker Oth's lcd library,
+  12:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        changed lcd_init(), added additional constants for lcd_command(),
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        added 4-bit I/O mode, improved and optimized code.
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        Library can be operated in memory mapped mode (LCD_IO_MODE=0) or in 
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        4-bit IO port mode (LCD_IO_MODE=1). 8-bit IO port mode not supported.
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        Memory mapped mode compatible with Kanda STK200, but supports also
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        generation of R/W signal through A8 address line.
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****  USAGE
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        See the C include lcd.h file for a description of each function
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *****************************************************************************/
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #include <inttypes.h>
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #include <avr/io.h>
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #include <avr/pgmspace.h>
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #include <util/delay.h>
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #include "lcd.h"
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* 
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** ** constants/macros 
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** */
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define DDR(x) (*(&x - 1))      /* address of data direction register of port x */
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if defined(__AVR_ATmega64__) || defined(__AVR_ATmega128__)
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* on ATmega64/128 PINF is on port 0x00 and not 0x60 */
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     #define PIN(x) ( &PORTF==&(x) ? _SFR_IO8(0x00) : (*(&x - 2)) )
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 	#define PIN(x) (*(&x - 2))    /* address of input register of port x          */
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_e_delay()   _delay_us(LCD_DELAY_ENABLE_PULSE)
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_e_high()    LCD_E_PORT  |=  _BV(LCD_E_PIN);
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_e_low()     LCD_E_PORT  &= ~_BV(LCD_E_PIN);
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_e_toggle()  toggle_e()
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_rw_high()   LCD_RW_PORT |=  _BV(LCD_RW_PIN)
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_rw_low()    LCD_RW_PORT &= ~_BV(LCD_RW_PIN)
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_rs_high()   LCD_RS_PORT |=  _BV(LCD_RS_PIN)
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_rs_low()    LCD_RS_PORT &= ~_BV(LCD_RS_PIN)
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==1
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define LCD_FUNCTION_DEFAULT    LCD_FUNCTION_4BIT_1LINE 
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define LCD_FUNCTION_DEFAULT    LCD_FUNCTION_4BIT_2LINES 
+  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==1
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define LCD_FUNCTION_DEFAULT    LCD_FUNCTION_8BIT_1LINE
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define LCD_FUNCTION_DEFAULT    LCD_FUNCTION_8BIT_2LINES
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_CONTROLLER_KS0073
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==4
+  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  73:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define KS0073_EXTENDED_FUNCTION_REGISTER_ON  0x2C   /* |0|010|1100 4-bit mode, extension-bit RE = 
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define KS0073_EXTENDED_FUNCTION_REGISTER_OFF 0x28   /* |0|010|1000 4-bit mode, extension-bit RE = 
+  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define KS0073_4LINES_MODE                    0x09   /* |0|000|1001 4 lines mode */
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* 
+  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** ** function prototypes 
+  82:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** */
+  83:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+  84:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** static void toggle_e(void);
+  85:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+  86:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  87:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*
+  88:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** ** local functions
+  89:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** */
+  90:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  91:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  92:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /************************************************************************* 
+  93:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** delay for a minimum of <us> microseconds
+  94:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** the number of loops is calculated at compile-time from MCU clock frequency
+  95:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+  96:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define delay(us)  _delay_us(us) 
+  97:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  98:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+  99:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+ 100:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* toggle Enable Pin to initiate write */
+ 101:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** static void toggle_e(void)
+ 102:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 108               	.LM0:
+ 109               	.LFBB1:
+ 110               	/* prologue: function */
+ 111               	/* frame size = 0 */
+ 112               	/* stack size = 0 */
+ 113               	.L__stack_usage = 0
+ 103:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_high();
+ 115               	.LM1:
+ 116 0000 289A      		sbi 0x5,0
+ 117               	.LBB28:
+ 118               	.LBB29:
+ 120               	.Ltext1:
+   1:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   6:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+   9:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  12:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  17:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  21:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  33:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* $Id$ */
+  34:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  35:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  38:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __HAS_DELAY_CYCLES
+  39:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #define __HAS_DELAY_CYCLES 1
+  40:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  41:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  42:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <inttypes.h>
+  43:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  44:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #include <math.h>
+  45:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  46:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \file */
+  47:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  48:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \code
+  49:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  50:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  51:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     #include <util/delay.h>
+  52:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \endcode
+  53:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  54:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  55:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  56:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  57:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     used.
+  58:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  59:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  60:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  61:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  62:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  63:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  64:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  65:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  66:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  67:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  68:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  69:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  70:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  71:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  72:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  73:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  74:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  75:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     routines linked into the application.
+  76:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  77:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  78:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  79:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  80:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  81:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** */
+  82:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  83:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  84:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_us(double __us) __attribute__((always_inline));
+  85:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** static inline void _delay_ms(double __ms) __attribute__((always_inline));
+  86:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  87:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  88:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef F_CPU
+  89:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  90:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  91:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # define F_CPU 1000000UL
+  92:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  93:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  94:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+  95:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+  96:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+  97:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+  98:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+  99:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 100:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 101:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #  include <math.h>
+ 102:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+ 103:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 104:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /**
+ 105:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    \ingroup util_delay
+ 106:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 107:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 108:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 109:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 110:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 111:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 112:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 113:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 114:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 115:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 116:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 117:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 118:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 119:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 120:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 121:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 122:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 123:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 124:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 125:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 126:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 127:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 128:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 129:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 130:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 131:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 132:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Note: The new implementation of _delay_ms(double __ms) with 
+ 133:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible. 
+ 134:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 135:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Also, the backward compatible
+ 136:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 137:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 138:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 139:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 140:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  */
+ 141:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** void
+ 142:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 143:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** {
+ 144:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	double __tmp ; 
+ 145:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 146:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 147:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 148:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 149:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 151:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 152:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 153:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 154:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 155:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 156:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 157:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 158:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#else
+ 159:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//round up by default
+ 160:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 161:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#endif
+ 162:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 163:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 164:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 165:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #else
+ 166:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint16_t __ticks;
+ 167:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 168:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	if (__tmp < 1.0)
+ 169:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks = 1;
+ 170:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	else if (__tmp > 65535)
+ 171:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	{
+ 172:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 173:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 174:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		while(__ticks)
+ 175:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		{
+ 176:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 			// wait 1/10 ms
+ 177:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 178:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 			__ticks --;
+ 179:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		}
+ 180:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		return;
+ 181:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	}
+ 182:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	else
+ 183:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks = (uint16_t)__tmp;
+ 184:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	_delay_loop_2(__ticks);
+ 185:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #endif
+ 186:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** }
+ 187:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 188:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** /**
+ 189:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    \ingroup util_delay
+ 190:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 191:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 192:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 193:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 194:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 195:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 196:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 197:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 198:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 199:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 200:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    will not be informed about this case.
+ 201:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 202:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles(unsigned long)
+ 203:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 204:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflow results in
+ 205:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    no delay i.e., 0us.
+ 206:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   
+ 207:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Conversion of __us into clock cycles may not always result in integer.
+ 208:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    By default, the clock cycles rounded up to next integer. This ensures that
+ 209:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    the user gets atleast __us microseconds of delay.
+ 210:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 211:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Alternatively, user can define __DELAY_ROUND_DOWN__ and __DELAY_ROUND_CLOSEST__
+ 212:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    to round down and round to closest integer.
+ 213:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  
+ 214:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Note: The new implementation of _delay_us(double __us) with 
+ 215:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****     __builtin_avr_delay_cycles(unsigned long) support is not backward compatible.
+ 216:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    User can define __DELAY_BACKWARD_COMPATIBLE__ to get a backward compatible delay.
+ 217:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    Also, the backward compatible
+ 218:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    algorithm will be chosen if the code is compiled in a <em>freestanding
+ 219:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    environment</em> (GCC option \c -ffreestanding), as the math functions
+ 220:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****    required for rounding are not available to the compiler then.
+ 221:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 222:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****  */
+ 223:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** void
+ 224:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** _delay_us(double __us)
+ 225:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** {
+ 226:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	double __tmp ; 
+ 227:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 228:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 229:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 230:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 231:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 232:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 233:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 234:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 235:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 236:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 237:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 238:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 239:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 240:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#else
+ 241:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		//round up by default
+ 242:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 243:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	#endif
+ 244:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 
+ 245:/usr/local/CrossPack-AVR-20131216/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 122               	.LM2:
+ 123 0002 82E0      		ldi r24,lo8(2)
+ 124 0004 8A95      		1: dec r24
+ 125 0006 01F4      		brne 1b
+ 126 0008 00C0      		rjmp .
+ 127               	.LBE29:
+ 128               	.LBE28:
+ 130               	.Ltext2:
+ 104:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_delay();
+ 105:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_low();
+ 132               	.LM3:
+ 133 000a 2898      		cbi 0x5,0
+ 134 000c 0895      		ret
+ 136               	.Lscope1:
+ 141               	lcd_write:
+ 106:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 107:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 108:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 109:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 110:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 111:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Low-level function to write byte to LCD controller
+ 112:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:    data   byte to write to LCD
+ 113:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****           rs     1: write data    
+ 114:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                  0: write instruction
+ 115:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:  none
+ 116:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 117:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+ 118:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** static void lcd_write(uint8_t data,uint8_t rs) 
+ 119:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 143               	.LM4:
+ 144               	.LFBB2:
+ 145 000e 1F93      		push r17
+ 146 0010 CF93      		push r28
+ 147 0012 DF93      		push r29
+ 148 0014 1F92      		push __zero_reg__
+ 149 0016 CDB7      		in r28,__SP_L__
+ 150 0018 DEB7      		in r29,__SP_H__
+ 151               	/* prologue: function */
+ 152               	/* frame size = 1 */
+ 153               	/* stack size = 4 */
+ 154               	.L__stack_usage = 4
+ 120:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     unsigned char dataBits ;
+ 121:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 122:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 123:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if (rs) {        /* write data        (RS=1, RW=0) */
+ 156               	.LM5:
+ 157 001a 6623      		tst r22
+ 158 001c 01F0      		breq .L3
+ 124:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        lcd_rs_high();
+ 160               	.LM6:
+ 161 001e 5F9A      		sbi 0xb,7
+ 162 0020 00C0      		rjmp .L4
+ 163               	.L3:
+ 125:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     } else {         /* write instruction (RS=0, RW=0) */
+ 126:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        lcd_rs_low();
+ 165               	.LM7:
+ 166 0022 5F98      		cbi 0xb,7
+ 167               	.L4:
+ 127:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 128:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_rw_low();    /* RW=0  write mode      */
+ 169               	.LM8:
+ 170 0024 5E98      		cbi 0xb,6
+ 129:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 130:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( ( &LCD_DATA0_PORT == &LCD_DATA1_PORT) && ( &LCD_DATA1_PORT == &LCD_DATA2_PORT ) && ( &LCD_
+ 131:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && (LCD_DATA0_PIN == 0) && (LCD_DATA1_PIN == 1) && (LCD_DATA2_PIN == 2) && (LCD_DATA3_PIN == 
+ 132:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 133:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure data pins as output */
+ 134:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= 0x0F;
+ 172               	.LM9:
+ 173 0026 97B1      		in r25,0x7
+ 174 0028 9F60      		ori r25,lo8(15)
+ 175 002a 97B9      		out 0x7,r25
+ 135:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 136:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* output high nibble first */
+ 137:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         dataBits = LCD_DATA0_PORT & 0xF0;
+ 177               	.LM10:
+ 178 002c 18B1      		in r17,0x8
+ 179 002e 107F      		andi r17,lo8(-16)
+ 138:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT = dataBits |((data>>4)&0x0F);
+ 181               	.LM11:
+ 182 0030 982F      		mov r25,r24
+ 183 0032 9295      		swap r25
+ 184 0034 9F70      		andi r25,lo8(15)
+ 185 0036 912B      		or r25,r17
+ 186 0038 98B9      		out 0x8,r25
+ 139:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_toggle();
+ 188               	.LM12:
+ 189 003a 8983      		std Y+1,r24
+ 190 003c 0E94 0000 		call toggle_e
+ 140:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 141:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* output low nibble */
+ 142:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT = dataBits | (data&0x0F);
+ 192               	.LM13:
+ 193 0040 8981      		ldd r24,Y+1
+ 194 0042 8F70      		andi r24,lo8(15)
+ 195 0044 812B      		or r24,r17
+ 196 0046 88B9      		out 0x8,r24
+ 143:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_toggle();
+ 198               	.LM14:
+ 199 0048 0E94 0000 		call toggle_e
+ 144:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 145:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* all data pins high (inactive) */
+ 146:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT = dataBits | 0x0F;
+ 201               	.LM15:
+ 202 004c 1F60      		ori r17,lo8(15)
+ 203 004e 18B9      		out 0x8,r17
+ 204               	/* epilogue start */
+ 147:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 148:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 149:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 150:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure data pins as output */
+ 151:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= _BV(LCD_DATA0_PIN);
+ 152:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA1_PORT) |= _BV(LCD_DATA1_PIN);
+ 153:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA2_PORT) |= _BV(LCD_DATA2_PIN);
+ 154:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
+ 155:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
+ 156:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* output high nibble first */
+ 157:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA3_PORT &= ~_BV(LCD_DATA3_PIN);
+ 158:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA2_PORT &= ~_BV(LCD_DATA2_PIN);
+ 159:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA1_PORT &= ~_BV(LCD_DATA1_PIN);
+ 160:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
+ 161:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x80) LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
+ 162:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x40) LCD_DATA2_PORT |= _BV(LCD_DATA2_PIN);
+ 163:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x20) LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);
+ 164:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x10) LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);   
+ 165:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_toggle();
+ 166:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
+ 167:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* output low nibble */
+ 168:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA3_PORT &= ~_BV(LCD_DATA3_PIN);
+ 169:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA2_PORT &= ~_BV(LCD_DATA2_PIN);
+ 170:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA1_PORT &= ~_BV(LCD_DATA1_PIN);
+ 171:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
+ 172:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x08) LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
+ 173:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x04) LCD_DATA2_PORT |= _BV(LCD_DATA2_PIN);
+ 174:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x02) LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);
+ 175:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x01) LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);
+ 176:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_toggle();        
+ 177:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
+ 178:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* all data pins high (inactive) */
+ 179:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);
+ 180:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);
+ 181:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA2_PORT |= _BV(LCD_DATA2_PIN);
+ 182:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
+ 183:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 184:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 206               	.LM16:
+ 207 0050 0F90      		pop __tmp_reg__
+ 208 0052 DF91      		pop r29
+ 209 0054 CF91      		pop r28
+ 210 0056 1F91      		pop r17
+ 211 0058 0895      		ret
+ 216               	.Lscope2:
+ 219               	lcd_read.constprop.0:
+ 185:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+ 186:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_write(d,rs) if (rs) *(volatile uint8_t*)(LCD_IO_DATA) = d; else *(volatile uint8_t*)(LC
+ 187:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* rs==0 -> write instruction to LCD_IO_FUNCTION */
+ 188:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* rs==1 -> write data to LCD_IO_DATA */
+ 189:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 190:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 191:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 192:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 193:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Low-level function to read byte from LCD controller
+ 194:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:    rs     1: read data    
+ 195:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                  0: read busy flag / address counter
+ 196:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:  byte read from LCD controller
+ 197:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 198:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+ 199:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** static uint8_t lcd_read(uint8_t rs) 
+ 221               	.LM17:
+ 222               	.LFBB3:
+ 223               	/* prologue: function */
+ 224               	/* frame size = 0 */
+ 225               	/* stack size = 0 */
+ 226               	.L__stack_usage = 0
+ 200:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 201:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     uint8_t data;
+ 202:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 203:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 204:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if (rs)
+ 205:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_rs_high();                       /* RS=1: read data      */
+ 206:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 207:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_rs_low();                        /* RS=0: read busy flag */
+ 228               	.LM18:
+ 229 005a 5F98      		cbi 0xb,7
+ 208:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_rw_high();                           /* RW=1  read mode      */
+ 231               	.LM19:
+ 232 005c 5E9A      		sbi 0xb,6
+ 209:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 210:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( ( &LCD_DATA0_PORT == &LCD_DATA1_PORT) && ( &LCD_DATA1_PORT == &LCD_DATA2_PORT ) && ( &LCD_
+ 211:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && ( LCD_DATA0_PIN == 0 )&& (LCD_DATA1_PIN == 1) && (LCD_DATA2_PIN == 2) && (LCD_DATA3_PIN ==
+ 212:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 213:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) &= 0xF0;         /* configure data pins as input */
+ 234               	.LM20:
+ 235 005e 87B1      		in r24,0x7
+ 236 0060 807F      		andi r24,lo8(-16)
+ 237 0062 87B9      		out 0x7,r24
+ 214:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
+ 215:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_high();
+ 239               	.LM21:
+ 240 0064 289A      		sbi 0x5,0
+ 241               	.LBB30:
+ 242               	.LBB31:
+ 244               	.Ltext3:
+ 246               	.LM22:
+ 247 0066 82E0      		ldi r24,lo8(2)
+ 248 0068 8A95      		1: dec r24
+ 249 006a 01F4      		brne 1b
+ 250 006c 00C0      		rjmp .
+ 251               	.LBE31:
+ 252               	.LBE30:
+ 254               	.Ltext4:
+ 216:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();        
+ 217:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         data = PIN(LCD_DATA0_PORT) << 4;     /* read high nibble first */
+ 256               	.LM23:
+ 257 006e 86B1      		in r24,0x6
+ 218:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_low();
+ 259               	.LM24:
+ 260 0070 2898      		cbi 0x5,0
+ 261               	.LBB32:
+ 262               	.LBB33:
+ 264               	.Ltext5:
+ 266               	.LM25:
+ 267 0072 92E0      		ldi r25,lo8(2)
+ 268 0074 9A95      		1: dec r25
+ 269 0076 01F4      		brne 1b
+ 270 0078 00C0      		rjmp .
+ 271               	.LBE33:
+ 272               	.LBE32:
+ 274               	.Ltext6:
+ 219:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
+ 220:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();                       /* Enable 500ns low       */
+ 221:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
+ 222:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_high();
+ 276               	.LM26:
+ 277 007a 289A      		sbi 0x5,0
+ 278               	.LBB34:
+ 279               	.LBB35:
+ 281               	.Ltext7:
+ 283               	.LM27:
+ 284 007c 92E0      		ldi r25,lo8(2)
+ 285 007e 9A95      		1: dec r25
+ 286 0080 01F4      		brne 1b
+ 287 0082 00C0      		rjmp .
+ 288               	.LBE35:
+ 289               	.LBE34:
+ 291               	.Ltext8:
+ 223:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();
+ 224:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         data |= PIN(LCD_DATA0_PORT)&0x0F;    /* read low nibble        */
+ 293               	.LM28:
+ 294 0084 96B1      		in r25,0x6
+ 295 0086 9F70      		andi r25,lo8(15)
+ 217:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         data = PIN(LCD_DATA0_PORT) << 4;     /* read high nibble first */
+ 297               	.LM29:
+ 298 0088 8295      		swap r24
+ 299 008a 807F      		andi r24,lo8(-16)
+ 225:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_low();
+ 301               	.LM30:
+ 302 008c 2898      		cbi 0x5,0
+ 226:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 227:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 228:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 229:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure data pins as input */
+ 230:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) &= ~_BV(LCD_DATA0_PIN);
+ 231:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA1_PORT) &= ~_BV(LCD_DATA1_PIN);
+ 232:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA2_PORT) &= ~_BV(LCD_DATA2_PIN);
+ 233:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA3_PORT) &= ~_BV(LCD_DATA3_PIN);
+ 234:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                 
+ 235:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* read high nibble first */
+ 236:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_high();
+ 237:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();        
+ 238:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         data = 0;
+ 239:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA0_PORT) & _BV(LCD_DATA0_PIN) ) data |= 0x10;
+ 240:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA1_PORT) & _BV(LCD_DATA1_PIN) ) data |= 0x20;
+ 241:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA2_PORT) & _BV(LCD_DATA2_PIN) ) data |= 0x40;
+ 242:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA3_PORT) & _BV(LCD_DATA3_PIN) ) data |= 0x80;
+ 243:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_low();
+ 244:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 245:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();                       /* Enable 500ns low       */
+ 246:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 247:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* read low nibble */    
+ 248:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_high();
+ 249:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();
+ 250:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA0_PORT) & _BV(LCD_DATA0_PIN) ) data |= 0x01;
+ 251:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA1_PORT) & _BV(LCD_DATA1_PIN) ) data |= 0x02;
+ 252:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA2_PORT) & _BV(LCD_DATA2_PIN) ) data |= 0x04;
+ 253:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA3_PORT) & _BV(LCD_DATA3_PIN) ) data |= 0x08;        
+ 254:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_low();
+ 255:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 256:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     return data;
+ 257:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 304               	.LM31:
+ 305 008e 892B      		or r24,r25
+ 306 0090 0895      		ret
+ 308               	.Lscope3:
+ 311               	lcd_waitbusy:
+ 258:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+ 259:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #define lcd_read(rs) (rs) ? *(volatile uint8_t*)(LCD_IO_DATA+LCD_IO_READ) : *(volatile uint8_t*)(LC
+ 260:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* rs==0 -> read instruction from LCD_IO_FUNCTION */
+ 261:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* rs==1 -> read data from LCD_IO_DATA */
+ 262:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 263:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 264:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 265:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 266:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** loops while lcd is busy, returns address counter
+ 267:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 268:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** static uint8_t lcd_waitbusy(void)
+ 269:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 270:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 313               	.LM32:
+ 314               	.LFBB4:
+ 315               	/* prologue: function */
+ 316               	/* frame size = 0 */
+ 317               	/* stack size = 0 */
+ 318               	.L__stack_usage = 0
+ 319               	.L9:
+ 271:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     register uint8_t c;
+ 272:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 273:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* wait until busy flag is cleared */
+ 274:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     while ( (c=lcd_read(0)) & (1<<LCD_BUSY)) {}
+ 321               	.LM33:
+ 322 0092 0E94 0000 		call lcd_read.constprop.0
+ 323 0096 87FD      		sbrc r24,7
+ 324 0098 00C0      		rjmp .L9
+ 325               	.LBB36:
+ 326               	.LBB37:
+ 328               	.Ltext9:
+ 330               	.LM34:
+ 331 009a 8AE0      		ldi r24,lo8(10)
+ 332 009c 8A95      		1: dec r24
+ 333 009e 01F4      		brne 1b
+ 334 00a0 00C0      		rjmp .
+ 335               	.LBE37:
+ 336               	.LBE36:
+ 338               	.Ltext10:
+ 275:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 276:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* the address counter is updated 4us after the busy flag is cleared */
+ 277:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_BUSY_FLAG);
+ 278:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 279:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* now read the address counter */
+ 280:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     return (lcd_read(0));  // return address counter
+ 340               	.LM35:
+ 341 00a2 0C94 0000 		jmp lcd_read.constprop.0
+ 343               	.Lscope4:
+ 346               	.global	lcd_command
+ 348               	lcd_command:
+ 281:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 282:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_waitbusy */
+ 283:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 284:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 285:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 286:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Move cursor to the start of next line or to the first line if the cursor 
+ 287:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** is already on the last line.
+ 288:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 289:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** static inline void lcd_newline(uint8_t pos)
+ 290:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 291:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     register uint8_t addressCounter;
+ 292:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 293:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 294:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==1
+ 295:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     addressCounter = 0;
+ 296:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 297:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==2
+ 298:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( pos < (LCD_START_LINE2) )
+ 299:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE2;
+ 300:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 301:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE1;
+ 302:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 303:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==4
+ 304:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if KS0073_4LINES_MODE
+ 305:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( pos < LCD_START_LINE2 )
+ 306:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE2;
+ 307:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( (pos >= LCD_START_LINE2) && (pos < LCD_START_LINE3) )
+ 308:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE3;
+ 309:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( (pos >= LCD_START_LINE3) && (pos < LCD_START_LINE4) )
+ 310:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE4;
+ 311:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else 
+ 312:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE1;
+ 313:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+ 314:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( pos < LCD_START_LINE3 )
+ 315:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE2;
+ 316:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( (pos >= LCD_START_LINE2) && (pos < LCD_START_LINE4) )
+ 317:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE3;
+ 318:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( (pos >= LCD_START_LINE3) && (pos < LCD_START_LINE2) )
+ 319:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE4;
+ 320:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else 
+ 321:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE1;
+ 322:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 323:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 324:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command((1<<LCD_DDRAM)+addressCounter);
+ 325:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 326:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_newline */
+ 327:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 328:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 329:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*
+ 330:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** ** PUBLIC FUNCTIONS 
+ 331:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** */
+ 332:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 333:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 334:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Send LCD controller instruction command
+ 335:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:   instruction to send to LCD controller, see HD44780 data sheet
+ 336:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns: none
+ 337:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 338:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_command(uint8_t cmd)
+ 339:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 350               	.LM36:
+ 351               	.LFBB5:
+ 352 00a6 CF93      		push r28
+ 353               	/* prologue: function */
+ 354               	/* frame size = 0 */
+ 355               	/* stack size = 1 */
+ 356               	.L__stack_usage = 1
+ 357 00a8 C82F      		mov r28,r24
+ 340:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_waitbusy();
+ 359               	.LM37:
+ 360 00aa 0E94 0000 		call lcd_waitbusy
+ 341:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(cmd,0);
+ 362               	.LM38:
+ 363 00ae 60E0      		ldi r22,0
+ 364 00b0 8C2F      		mov r24,r28
+ 365               	/* epilogue start */
+ 342:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 367               	.LM39:
+ 368 00b2 CF91      		pop r28
+ 341:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(cmd,0);
+ 370               	.LM40:
+ 371 00b4 0C94 0000 		jmp lcd_write
+ 373               	.Lscope5:
+ 376               	.global	lcd_data
+ 378               	lcd_data:
+ 343:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 344:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 345:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 346:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Send data byte to LCD controller 
+ 347:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:   data to send to LCD controller, see HD44780 data sheet
+ 348:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns: none
+ 349:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 350:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_data(uint8_t data)
+ 351:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 380               	.LM41:
+ 381               	.LFBB6:
+ 382 00b8 CF93      		push r28
+ 383               	/* prologue: function */
+ 384               	/* frame size = 0 */
+ 385               	/* stack size = 1 */
+ 386               	.L__stack_usage = 1
+ 387 00ba C82F      		mov r28,r24
+ 352:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_waitbusy();
+ 389               	.LM42:
+ 390 00bc 0E94 0000 		call lcd_waitbusy
+ 353:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(data,1);
+ 392               	.LM43:
+ 393 00c0 61E0      		ldi r22,lo8(1)
+ 394 00c2 8C2F      		mov r24,r28
+ 395               	/* epilogue start */
+ 354:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 397               	.LM44:
+ 398 00c4 CF91      		pop r28
+ 353:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(data,1);
+ 400               	.LM45:
+ 401 00c6 0C94 0000 		jmp lcd_write
+ 403               	.Lscope6:
+ 407               	.global	lcd_gotoxy
+ 409               	lcd_gotoxy:
+ 355:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 356:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 357:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 358:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 359:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Set cursor to specified position
+ 360:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:    x  horizontal position  (0: left most position)
+ 361:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****           y  vertical position    (0: first line)
+ 362:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:  none
+ 363:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 364:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_gotoxy(uint8_t x, uint8_t y)
+ 365:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 411               	.LM46:
+ 412               	.LFBB7:
+ 413               	/* prologue: function */
+ 414               	/* frame size = 0 */
+ 415               	/* stack size = 0 */
+ 416               	.L__stack_usage = 0
+ 366:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==1
+ 367:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+ 368:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 369:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==2
+ 370:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( y==0 ) 
+ 418               	.LM47:
+ 419 00ca 6111      		cpse r22,__zero_reg__
+ 420 00cc 00C0      		rjmp .L13
+ 371:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+ 422               	.LM48:
+ 423 00ce 8058      		subi r24,lo8(-(-128))
+ 424 00d0 00C0      		rjmp .L14
+ 425               	.L13:
+ 372:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 373:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
+ 427               	.LM49:
+ 428 00d2 8054      		subi r24,lo8(-(-64))
+ 429               	.L14:
+ 430 00d4 0C94 0000 		jmp lcd_command
+ 432               	.Lscope7:
+ 434               	.global	lcd_getxy
+ 436               	lcd_getxy:
+ 374:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 375:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==4
+ 376:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( y==0 )
+ 377:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+ 378:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( y==1)
+ 379:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
+ 380:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( y==2)
+ 381:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_command((1<<LCD_DDRAM)+LCD_START_LINE3+x);
+ 382:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else /* y==3 */
+ 383:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_command((1<<LCD_DDRAM)+LCD_START_LINE4+x);
+ 384:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 385:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 386:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_gotoxy */
+ 387:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 388:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 389:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 390:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 391:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** int lcd_getxy(void)
+ 392:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 438               	.LM50:
+ 439               	.LFBB8:
+ 440               	/* prologue: function */
+ 441               	/* frame size = 0 */
+ 442               	/* stack size = 0 */
+ 443               	.L__stack_usage = 0
+ 393:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     return lcd_waitbusy();
+ 445               	.LM51:
+ 446 00d8 0E94 0000 		call lcd_waitbusy
+ 394:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 448               	.LM52:
+ 449 00dc 90E0      		ldi r25,0
+ 450 00de 0895      		ret
+ 452               	.Lscope8:
+ 454               	.global	lcd_clrscr
+ 456               	lcd_clrscr:
+ 395:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 396:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 397:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 398:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Clear display and set cursor to home position
+ 399:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 400:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_clrscr(void)
+ 401:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 458               	.LM53:
+ 459               	.LFBB9:
+ 460               	/* prologue: function */
+ 461               	/* frame size = 0 */
+ 462               	/* stack size = 0 */
+ 463               	.L__stack_usage = 0
+ 402:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(1<<LCD_CLR);
+ 465               	.LM54:
+ 466 00e0 81E0      		ldi r24,lo8(1)
+ 467 00e2 0C94 0000 		jmp lcd_command
+ 469               	.Lscope9:
+ 471               	.global	lcd_home
+ 473               	lcd_home:
+ 403:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 404:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 405:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 406:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 407:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Set cursor to home position
+ 408:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 409:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_home(void)
+ 410:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 475               	.LM55:
+ 476               	.LFBB10:
+ 477               	/* prologue: function */
+ 478               	/* frame size = 0 */
+ 479               	/* stack size = 0 */
+ 480               	.L__stack_usage = 0
+ 411:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(1<<LCD_HOME);
+ 482               	.LM56:
+ 483 00e6 82E0      		ldi r24,lo8(2)
+ 484 00e8 0C94 0000 		jmp lcd_command
+ 486               	.Lscope10:
+ 489               	.global	lcd_putc
+ 491               	lcd_putc:
+ 412:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
+ 413:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 414:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 415:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 416:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Display character at current cursor position 
+ 417:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:    character to be displayed                                       
+ 418:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:  none
+ 419:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 420:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_putc(char c)
+ 421:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 493               	.LM57:
+ 494               	.LFBB11:
+ 495 00ec CF93      		push r28
+ 496               	/* prologue: function */
+ 497               	/* frame size = 0 */
+ 498               	/* stack size = 1 */
+ 499               	.L__stack_usage = 1
+ 500 00ee C82F      		mov r28,r24
+ 422:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     uint8_t pos;
+ 423:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 424:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 425:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     pos = lcd_waitbusy();   // read busy-flag and address counter
+ 502               	.LM58:
+ 503 00f0 0E94 0000 		call lcd_waitbusy
+ 426:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if (c=='\n')
+ 505               	.LM59:
+ 506 00f4 CA30      		cpi r28,lo8(10)
+ 507 00f6 01F4      		brne .L19
+ 508               	.LBB40:
+ 509               	.LBB41:
+ 298:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( pos < (LCD_START_LINE2) )
+ 511               	.LM60:
+ 512 00f8 8034      		cpi r24,lo8(64)
+ 513 00fa 00F4      		brsh .L21
+ 299:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE2;
+ 515               	.LM61:
+ 516 00fc 80E4      		ldi r24,lo8(64)
+ 517 00fe 00C0      		rjmp .L20
+ 518               	.L21:
+ 301:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         addressCounter = LCD_START_LINE1;
+ 520               	.LM62:
+ 521 0100 80E0      		ldi r24,0
+ 522               	.L20:
+ 324:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command((1<<LCD_DDRAM)+addressCounter);
+ 524               	.LM63:
+ 525 0102 8058      		subi r24,lo8(-(-128))
+ 526               	/* epilogue start */
+ 527               	.LBE41:
+ 528               	.LBE40:
+ 427:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 428:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_newline(pos);
+ 429:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 430:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 431:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 432:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_WRAP_LINES==1
+ 433:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_LINES==1
+ 434:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( pos == LCD_START_LINE1+LCD_DISP_LENGTH ) {
+ 435:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE1,0);
+ 436:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }
+ 437:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #elif LCD_LINES==2
+ 438:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( pos == LCD_START_LINE1+LCD_DISP_LENGTH ) {
+ 439:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE2,0);    
+ 440:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }else if ( pos == LCD_START_LINE2+LCD_DISP_LENGTH ){
+ 441:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE1,0);
+ 442:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }
+ 443:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #elif LCD_LINES==4
+ 444:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( pos == LCD_START_LINE1+LCD_DISP_LENGTH ) {
+ 445:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE2,0);    
+ 446:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }else if ( pos == LCD_START_LINE2+LCD_DISP_LENGTH ) {
+ 447:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE3,0);
+ 448:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }else if ( pos == LCD_START_LINE3+LCD_DISP_LENGTH ) {
+ 449:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE4,0);
+ 450:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }else if ( pos == LCD_START_LINE4+LCD_DISP_LENGTH ) {
+ 451:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****             lcd_write((1<<LCD_DDRAM)+LCD_START_LINE1,0);
+ 452:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         }
+ 453:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 454:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_waitbusy();
+ 455:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 456:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_write(c, 1);
+ 457:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 458:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 459:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_putc */
+ 530               	.LM64:
+ 531 0104 CF91      		pop r28
+ 532               	.LBB43:
+ 533               	.LBB42:
+ 324:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command((1<<LCD_DDRAM)+addressCounter);
+ 535               	.LM65:
+ 536 0106 0C94 0000 		jmp lcd_command
+ 537               	.L19:
+ 538               	.LBE42:
+ 539               	.LBE43:
+ 456:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_write(c, 1);
+ 541               	.LM66:
+ 542 010a 61E0      		ldi r22,lo8(1)
+ 543 010c 8C2F      		mov r24,r28
+ 544               	/* epilogue start */
+ 546               	.LM67:
+ 547 010e CF91      		pop r28
+ 456:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_write(c, 1);
+ 549               	.LM68:
+ 550 0110 0C94 0000 		jmp lcd_write
+ 561               	.Lscope11:
+ 564               	.global	lcd_puts
+ 566               	lcd_puts:
+ 460:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 461:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 462:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 463:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Display string without auto linefeed 
+ 464:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:    string to be displayed
+ 465:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:  none
+ 466:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 467:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_puts(const char *s)
+ 468:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* print string on lcd (no auto linefeed) */
+ 469:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 568               	.LM69:
+ 569               	.LFBB12:
+ 570 0114 CF93      		push r28
+ 571 0116 DF93      		push r29
+ 572               	/* prologue: function */
+ 573               	/* frame size = 0 */
+ 574               	/* stack size = 2 */
+ 575               	.L__stack_usage = 2
+ 576 0118 EC01      		movw r28,r24
+ 577               	.L23:
+ 470:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     register char c;
+ 471:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 472:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     while ( (c = *s++) ) {
+ 579               	.LM70:
+ 580 011a 8991      		ld r24,Y+
+ 581 011c 8823      		tst r24
+ 582 011e 01F0      		breq .L25
+ 473:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_putc(c);
+ 584               	.LM71:
+ 585 0120 0E94 0000 		call lcd_putc
+ 586 0124 00C0      		rjmp .L23
+ 587               	.L25:
+ 588               	/* epilogue start */
+ 474:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 475:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 476:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_puts */
+ 590               	.LM72:
+ 591 0126 DF91      		pop r29
+ 592 0128 CF91      		pop r28
+ 593 012a 0895      		ret
+ 598               	.Lscope12:
+ 601               	.global	lcd_puts_p
+ 603               	lcd_puts_p:
+ 477:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 478:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 479:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 480:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Display string from program memory without auto linefeed 
+ 481:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:     string from program memory be be displayed                                        
+ 482:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:   none
+ 483:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 484:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_puts_p(const char *progmem_s)
+ 485:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /* print string from program memory on lcd (no auto linefeed) */
+ 486:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 605               	.LM73:
+ 606               	.LFBB13:
+ 607 012c CF93      		push r28
+ 608 012e DF93      		push r29
+ 609               	/* prologue: function */
+ 610               	/* frame size = 0 */
+ 611               	/* stack size = 2 */
+ 612               	.L__stack_usage = 2
+ 613 0130 FC01      		movw r30,r24
+ 614               	.L27:
+ 615               	.LBB44:
+ 487:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     register char c;
+ 488:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 489:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     while ( (c = pgm_read_byte(progmem_s++)) ) {
+ 617               	.LM74:
+ 618               	/* #APP */
+ 619               	 ;  489 "/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c" 1
+ 620 0132 8491      		lpm r24, Z
+ 621               		
+ 622               	 ;  0 "" 2
+ 623               	/* #NOAPP */
+ 624 0134 EF01      		movw r28,r30
+ 625 0136 2196      		adiw r28,1
+ 626               	.LBE44:
+ 627 0138 8823      		tst r24
+ 628 013a 01F0      		breq .L29
+ 490:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_putc(c);
+ 630               	.LM75:
+ 631 013c 0E94 0000 		call lcd_putc
+ 632 0140 FE01      		movw r30,r28
+ 633 0142 00C0      		rjmp .L27
+ 634               	.L29:
+ 635               	/* epilogue start */
+ 491:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 492:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 493:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_puts_p */
+ 637               	.LM76:
+ 638 0144 DF91      		pop r29
+ 639 0146 CF91      		pop r28
+ 640 0148 0895      		ret
+ 645               	.Lscope13:
+ 648               	.global	lcd_init
+ 650               	lcd_init:
+ 494:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 495:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 496:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** /*************************************************************************
+ 497:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Initialize display and select type of cursor 
+ 498:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Input:    dispAttr LCD_DISP_OFF            display off
+ 499:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                    LCD_DISP_ON             display on, cursor off
+ 500:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                    LCD_DISP_ON_CURSOR      display on, cursor on
+ 501:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                    LCD_DISP_CURSOR_BLINK   display on, cursor on flashing
+ 502:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** Returns:  none
+ 503:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** *************************************************************************/
+ 504:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** void lcd_init(uint8_t dispAttr)
+ 505:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** {
+ 652               	.LM77:
+ 653               	.LFBB14:
+ 654 014a CF93      		push r28
+ 655               	/* prologue: function */
+ 656               	/* frame size = 0 */
+ 657               	/* stack size = 1 */
+ 658               	.L__stack_usage = 1
+ 659 014c C82F      		mov r28,r24
+ 506:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if LCD_IO_MODE
+ 507:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /*
+ 508:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****      *  Initialize LCD to 4 bit I/O mode
+ 509:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****      */
+ 510:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****      
+ 511:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( ( &LCD_DATA0_PORT == &LCD_DATA1_PORT) && ( &LCD_DATA1_PORT == &LCD_DATA2_PORT ) && ( &LCD_
+ 512:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && ( &LCD_RS_PORT == &LCD_DATA0_PORT) && ( &LCD_RW_PORT == &LCD_DATA0_PORT) && (&LCD_E_PORT =
+ 513:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && (LCD_DATA0_PIN == 0 ) && (LCD_DATA1_PIN == 1) && (LCD_DATA2_PIN == 2) && (LCD_DATA3_PIN ==
+ 514:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && (LCD_RS_PIN == 4 ) && (LCD_RW_PIN == 5) && (LCD_E_PIN == 6 ) )
+ 515:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 516:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure all port bits as output (all LCD lines on same port) */
+ 517:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= 0x7F;
+ 518:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 519:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else if ( ( &LCD_DATA0_PORT == &LCD_DATA1_PORT) && ( &LCD_DATA1_PORT == &LCD_DATA2_PORT ) && ( 
+ 520:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****            && (LCD_DATA0_PIN == 0 ) && (LCD_DATA1_PIN == 1) && (LCD_DATA2_PIN == 2) && (LCD_DATA3_P
+ 521:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 522:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure all port bits as output (all LCD data lines on same port, but control lines on
+ 523:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= 0x0F;
+ 661               	.LM78:
+ 662 014e 97B1      		in r25,0x7
+ 663 0150 9F60      		ori r25,lo8(15)
+ 664 0152 97B9      		out 0x7,r25
+ 524:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_RS_PORT)    |= _BV(LCD_RS_PIN);
+ 666               	.LM79:
+ 667 0154 579A      		sbi 0xa,7
+ 525:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_RW_PORT)    |= _BV(LCD_RW_PIN);
+ 669               	.LM80:
+ 670 0156 569A      		sbi 0xa,6
+ 526:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_E_PORT)     |= _BV(LCD_E_PIN);
+ 672               	.LM81:
+ 673 0158 209A      		sbi 0x4,0
+ 674               	.LBB45:
+ 675               	.LBB46:
+ 677               	.Ltext11:
+ 679               	.LM82:
+ 680 015a 8FEF      		ldi r24,lo8(31999)
+ 681 015c 9CE7      		ldi r25,hi8(31999)
+ 682 015e 0197      		1: sbiw r24,1
+ 683 0160 01F4      		brne 1b
+ 684 0162 00C0      		rjmp .
+ 685 0164 0000      		nop
+ 686               	.LBE46:
+ 687               	.LBE45:
+ 689               	.Ltext12:
+ 527:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 528:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
+ 529:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     {
+ 530:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure all port bits as output (LCD data and control lines on different ports */
+ 531:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_RS_PORT)    |= _BV(LCD_RS_PIN);
+ 532:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_RW_PORT)    |= _BV(LCD_RW_PIN);
+ 533:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_E_PORT)     |= _BV(LCD_E_PIN);
+ 534:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= _BV(LCD_DATA0_PIN);
+ 535:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA1_PORT) |= _BV(LCD_DATA1_PIN);
+ 536:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA2_PORT) |= _BV(LCD_DATA2_PIN);
+ 537:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
+ 538:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
+ 539:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_BOOTUP);             /* wait 16ms or more after power-on       */
+ 540:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 541:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* initial write to lcd is 8bit */
+ 542:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);    // LCD_FUNCTION>>4;
+ 691               	.LM83:
+ 692 0166 419A      		sbi 0x8,1
+ 543:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);    // LCD_FUNCTION_8BIT>>4;
+ 694               	.LM84:
+ 695 0168 409A      		sbi 0x8,0
+ 544:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_toggle();
+ 697               	.LM85:
+ 698 016a 0E94 0000 		call toggle_e
+ 699               	.LBB47:
+ 700               	.LBB48:
+ 702               	.Ltext13:
+ 704               	.LM86:
+ 705 016e 8FE0      		ldi r24,lo8(9999)
+ 706 0170 97E2      		ldi r25,hi8(9999)
+ 707 0172 0197      		1: sbiw r24,1
+ 708 0174 01F4      		brne 1b
+ 709 0176 00C0      		rjmp .
+ 710 0178 0000      		nop
+ 711               	.LBE48:
+ 712               	.LBE47:
+ 714               	.Ltext14:
+ 545:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT);               /* delay, busy flag can't be checked here */
+ 546:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****    
+ 547:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* repeat last command */ 
+ 548:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_toggle();      
+ 716               	.LM87:
+ 717 017a 0E94 0000 		call toggle_e
+ 718               	.LBB49:
+ 719               	.LBB50:
+ 721               	.Ltext15:
+ 723               	.LM88:
+ 724 017e 9AEA      		ldi r25,lo8(-86)
+ 725 0180 9A95      		1: dec r25
+ 726 0182 01F4      		brne 1b
+ 727 0184 00C0      		rjmp .
+ 728               	.LBE50:
+ 729               	.LBE49:
+ 731               	.Ltext16:
+ 549:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT_REP);           /* delay, busy flag can't be checked here */
+ 550:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 551:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* repeat last command a third time */
+ 552:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_toggle();      
+ 733               	.LM89:
+ 734 0186 0E94 0000 		call toggle_e
+ 735               	.LBB51:
+ 736               	.LBB52:
+ 738               	.Ltext17:
+ 740               	.LM90:
+ 741 018a 8AEA      		ldi r24,lo8(-86)
+ 742 018c 8A95      		1: dec r24
+ 743 018e 01F4      		brne 1b
+ 744 0190 00C0      		rjmp .
+ 745               	.LBE52:
+ 746               	.LBE51:
+ 748               	.Ltext18:
+ 553:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT_REP);           /* delay, busy flag can't be checked here */
+ 554:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 555:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* now configure for 4bit mode */
+ 556:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);   // LCD_FUNCTION_4BIT_1LINE>>4
+ 750               	.LM91:
+ 751 0192 4098      		cbi 0x8,0
+ 557:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_toggle();
+ 753               	.LM92:
+ 754 0194 0E94 0000 		call toggle_e
+ 755               	.LBB53:
+ 756               	.LBB54:
+ 758               	.Ltext19:
+ 760               	.LM93:
+ 761 0198 9AEA      		ldi r25,lo8(-86)
+ 762 019a 9A95      		1: dec r25
+ 763 019c 01F4      		brne 1b
+ 764 019e 00C0      		rjmp .
+ 765               	.LBE54:
+ 766               	.LBE53:
+ 768               	.Ltext20:
+ 558:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT_4BIT);          /* some displays need this additional delay */
+ 559:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 560:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* from now the LCD only accepts 4 bit I/O, we can use lcd_command() */    
+ 561:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+ 562:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /*
+ 563:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****      * Initialize LCD to 8 bit memory mapped mode
+ 564:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****      */
+ 565:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
+ 566:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* enable external SRAM (memory mapped lcd) and one wait state */        
+ 567:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     MCUCR = _BV(SRE) | _BV(SRW);
+ 568:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 569:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* reset LCD */
+ 570:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_BOOTUP);                    /* wait 16ms after power-on     */
+ 571:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(LCD_FUNCTION_8BIT_1LINE,0);   /* function set: 8bit interface */                   
+ 572:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT);                      /* wait 5ms                     */
+ 573:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(LCD_FUNCTION_8BIT_1LINE,0);   /* function set: 8bit interface */                 
+ 574:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT_REP);                  /* wait 64us                    */
+ 575:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_write(LCD_FUNCTION_8BIT_1LINE,0);   /* function set: 8bit interface */                
+ 576:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     delay(LCD_DELAY_INIT_REP);                  /* wait 64us                    */
+ 577:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 578:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 579:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #if KS0073_4LINES_MODE
+ 580:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* Display with KS0073 controller requires special commands for enabling 4 line mode */
+ 581:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 	lcd_command(KS0073_EXTENDED_FUNCTION_REGISTER_ON);
+ 582:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 	lcd_command(KS0073_4LINES_MODE);
+ 583:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 	lcd_command(KS0073_EXTENDED_FUNCTION_REGISTER_OFF);
+ 584:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #else
+ 585:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
+ 770               	.LM94:
+ 771 01a0 88E2      		ldi r24,lo8(40)
+ 772 01a2 0E94 0000 		call lcd_command
+ 586:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** #endif
+ 587:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(LCD_DISP_OFF);              /* display off                  */
+ 774               	.LM95:
+ 775 01a6 88E0      		ldi r24,lo8(8)
+ 776 01a8 0E94 0000 		call lcd_command
+ 588:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_clrscr();                           /* display clear                */ 
+ 778               	.LM96:
+ 779 01ac 0E94 0000 		call lcd_clrscr
+ 589:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(LCD_MODE_DEFAULT);          /* set entry mode               */
+ 781               	.LM97:
+ 782 01b0 86E0      		ldi r24,lo8(6)
+ 783 01b2 0E94 0000 		call lcd_command
+ 590:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(dispAttr);                  /* display/cursor control       */
+ 785               	.LM98:
+ 786 01b6 8C2F      		mov r24,r28
+ 787               	/* epilogue start */
+ 591:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
+ 592:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }/* lcd_init */
+ 789               	.LM99:
+ 790 01b8 CF91      		pop r28
+ 590:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_command(dispAttr);                  /* display/cursor control       */
+ 792               	.LM100:
+ 793 01ba 0C94 0000 		jmp lcd_command
+ 795               	.Lscope14:
+ 797               	.Letext0:
+ 798               		.ident	"GCC: (GNU) 4.8.1"
+DEFINED SYMBOLS
+                            *ABS*:00000000 lcd.c
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:106    .text:00000000 toggle_e
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:141    .text:0000000e lcd_write
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:219    .text:0000005a lcd_read.constprop.0
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:311    .text:00000092 lcd_waitbusy
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:348    .text:000000a6 lcd_command
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:378    .text:000000b8 lcd_data
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:409    .text:000000ca lcd_gotoxy
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:436    .text:000000d8 lcd_getxy
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:456    .text:000000e0 lcd_clrscr
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:473    .text:000000e6 lcd_home
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:491    .text:000000ec lcd_putc
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:566    .text:00000114 lcd_puts
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:603    .text:0000012c lcd_puts_p
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccfimozO.s:650    .text:0000014a lcd_init
+
+NO UNDEFINED SYMBOLS

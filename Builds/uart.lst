@@ -1,0 +1,355 @@
+   1               		.file	"uart.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   8               		.text
+   9               	.Ltext0:
+ 113               	.global	uart_init
+ 115               	uart_init:
+   1:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //
+   2:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //  uart.c
+   3:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //  TemperatureServer
+   4:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //
+   5:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //  Created by Atakan ERCIYAS on 29/03/2017.
+   6:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //  Copyright © 2017 aercys. All rights reserved.
+   7:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** //
+   8:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+   9:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** #include "uart.h"
+  10:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** #include <util/delay.h>
+  11:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  12:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** void uart_init(int baudrate) {
+ 117               	.LM0:
+ 118               	.LFBB1:
+ 119               	/* prologue: function */
+ 120               	/* frame size = 0 */
+ 121               	/* stack size = 0 */
+ 122               	.L__stack_usage = 0
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     uint16_t UBRR = F_CPU / 16 / baudrate - 1;
+ 124               	.LM1:
+ 125 0000 9C01      		movw r18,r24
+ 126 0002 4427      		clr r20
+ 127 0004 37FD      		sbrc r19,7
+ 128 0006 4095      		com r20
+ 129 0008 542F      		mov r21,r20
+ 130 000a 60E2      		ldi r22,lo8(32)
+ 131 000c 71EA      		ldi r23,lo8(-95)
+ 132 000e 87E0      		ldi r24,lo8(7)
+ 133 0010 90E0      		ldi r25,0
+ 134 0012 0E94 0000 		call __udivmodsi4
+ 135 0016 2150      		subi r18,1
+ 136 0018 3109      		sbc r19,__zero_reg__
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     UBRR0H = (uint8_t) (UBRR >> 8);
+ 138               	.LM2:
+ 139 001a 3093 C500 		sts 197,r19
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     UBRR0L = (uint8_t) UBRR;
+ 141               	.LM3:
+ 142 001e 2093 C400 		sts 196,r18
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     UCSR0B |= (1<<TXEN0) | (1<<RXEN0);
+ 144               	.LM4:
+ 145 0022 E1EC      		ldi r30,lo8(-63)
+ 146 0024 F0E0      		ldi r31,0
+ 147 0026 8081      		ld r24,Z
+ 148 0028 8861      		ori r24,lo8(24)
+ 149 002a 8083      		st Z,r24
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     UCSR0C |= (0<<USBS0) | (1 << UCSZ01) | (1 << UCSZ00);
+ 151               	.LM5:
+ 152 002c E2EC      		ldi r30,lo8(-62)
+ 153 002e F0E0      		ldi r31,0
+ 154 0030 8081      		ld r24,Z
+ 155 0032 8660      		ori r24,lo8(6)
+ 156 0034 8083      		st Z,r24
+ 157 0036 0895      		ret
+ 162               	.Lscope1:
+ 166               	.global	send_uart_char
+ 168               	send_uart_char:
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** }
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** void send_uart_char(unsigned char serial_data, FILE *stream) {
+ 170               	.LM6:
+ 171               	.LFBB2:
+ 172               	/* prologue: function */
+ 173               	/* frame size = 0 */
+ 174               	/* stack size = 0 */
+ 175               	.L__stack_usage = 0
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     if (serial_data == '\0') { // Send each byte until reached \n character
+ 177               	.LM7:
+ 178 0038 8111      		cpse r24,__zero_reg__
+ 179 003a 00C0      		rjmp .L5
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         send_uart_char('\r', stream);
+ 181               	.LM8:
+ 182 003c 8DE0      		ldi r24,lo8(13)
+ 183 003e 0E94 0000 		call send_uart_char
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         send_uart_char('\n', stream);
+ 185               	.LM9:
+ 186 0042 8AE0      		ldi r24,lo8(10)
+ 187               	.L5:
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         return;
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     }
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     while (!(UCSR0A & (1 << UDRE0)));
+ 189               	.LM10:
+ 190 0044 9091 C000 		lds r25,192
+ 191 0048 95FF      		sbrs r25,5
+ 192 004a 00C0      		rjmp .L5
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     UDR0 = serial_data;
+ 194               	.LM11:
+ 195 004c 8093 C600 		sts 198,r24
+ 196 0050 0895      		ret
+ 198               	.Lscope2:
+ 200               	.global	receive_uart_char
+ 202               	receive_uart_char:
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** }
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** char receive_uart_char(void) {
+ 204               	.LM12:
+ 205               	.LFBB3:
+ 206               	/* prologue: function */
+ 207               	/* frame size = 0 */
+ 208               	/* stack size = 0 */
+ 209               	.L__stack_usage = 0
+ 210               	.L9:
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     while (!(UCSR0A & (1<<RXC0)));
+ 212               	.LM13:
+ 213 0052 8091 C000 		lds r24,192
+ 214 0056 87FF      		sbrs r24,7
+ 215 0058 00C0      		rjmp .L9
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     return UDR0;
+ 217               	.LM14:
+ 218 005a 8091 C600 		lds r24,198
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** }
+ 220               	.LM15:
+ 221 005e 0895      		ret
+ 223               	.Lscope3:
+ 226               	.global	uart_receive
+ 228               	uart_receive:
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** int uart_receive(char *buffer) {
+ 230               	.LM16:
+ 231               	.LFBB4:
+ 232 0060 0F93      		push r16
+ 233 0062 1F93      		push r17
+ 234 0064 CF93      		push r28
+ 235 0066 DF93      		push r29
+ 236               	/* prologue: function */
+ 237               	/* frame size = 0 */
+ 238               	/* stack size = 4 */
+ 239               	.L__stack_usage = 4
+ 240 0068 8C01      		movw r16,r24
+ 242               	.LM17:
+ 243 006a EC01      		movw r28,r24
+ 244               	.L12:
+ 245 006c CE01      		movw r24,r28
+ 246 006e 801B      		sub r24,r16
+ 247 0070 910B      		sbc r25,r17
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     char received;
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     int i = 0;
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     while (1) {
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         if (received == '\n' || received == '\r') break;
+ 249               	.LM18:
+ 250 0072 2A30      		cpi r18,lo8(10)
+ 251 0074 01F0      		breq .L11
+ 253               	.LM19:
+ 254 0076 2D30      		cpi r18,lo8(13)
+ 255 0078 01F0      		breq .L11
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         received = receive_uart_char();
+ 257               	.LM20:
+ 258 007a 0E94 0000 		call receive_uart_char
+ 259 007e 282F      		mov r18,r24
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         buffer[i++] = received;
+ 261               	.LM21:
+ 262 0080 8993      		st Y+,r24
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     }
+ 264               	.LM22:
+ 265 0082 00C0      		rjmp .L12
+ 266               	.L11:
+ 267               	/* epilogue start */
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     return i;
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** }
+ 269               	.LM23:
+ 270 0084 DF91      		pop r29
+ 271 0086 CF91      		pop r28
+ 272 0088 1F91      		pop r17
+ 273 008a 0F91      		pop r16
+ 274 008c 0895      		ret
+ 280               	.Lscope4:
+ 283               	.global	uart_getall
+ 285               	uart_getall:
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** 
+  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** char *uart_getall(char *delimeter) {
+ 287               	.LM24:
+ 288               	.LFBB5:
+ 289 008e 7F92      		push r7
+ 290 0090 8F92      		push r8
+ 291 0092 9F92      		push r9
+ 292 0094 AF92      		push r10
+ 293 0096 BF92      		push r11
+ 294 0098 CF92      		push r12
+ 295 009a DF92      		push r13
+ 296 009c EF92      		push r14
+ 297 009e FF92      		push r15
+ 298 00a0 0F93      		push r16
+ 299 00a2 1F93      		push r17
+ 300 00a4 CF93      		push r28
+ 301 00a6 DF93      		push r29
+ 302 00a8 CDB7      		in r28,__SP_L__
+ 303 00aa DEB7      		in r29,__SP_H__
+ 304 00ac C052      		subi r28,32
+ 305 00ae D240      		sbci r29,2
+ 306 00b0 0FB6      		in __tmp_reg__,__SREG__
+ 307 00b2 F894      		cli
+ 308 00b4 DEBF      		out __SP_H__,r29
+ 309 00b6 0FBE      		out __SREG__,__tmp_reg__
+ 310 00b8 CDBF      		out __SP_L__,r28
+ 311               	/* prologue: function */
+ 312               	/* frame size = 544 */
+ 313               	/* stack size = 557 */
+ 314               	.L__stack_usage = 557
+ 315 00ba 4C01      		movw r8,r24
+  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     char resp[512] = {0};
+ 317               	.LM25:
+ 318 00bc 9E01      		movw r18,r28
+ 319 00be 2F5F      		subi r18,-1
+ 320 00c0 3F4F      		sbci r19,-1
+ 321 00c2 7901      		movw r14,r18
+ 322 00c4 80E0      		ldi r24,0
+ 323 00c6 92E0      		ldi r25,lo8(2)
+ 324 00c8 F901      		movw r30,r18
+ 325 00ca 9C01      		movw r18,r24
+ 326               		0:
+ 327 00cc 1192      		st Z+,__zero_reg__
+ 328 00ce 2150      		subi r18,1
+ 329 00d0 3040      		sbci r19,0
+ 330 00d2 01F4      		brne 0b
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     char buffer[32] = {0};
+ 332               	.LM26:
+ 333 00d4 8E01      		movw r16,r28
+ 334 00d6 0F5F      		subi r16,-1
+ 335 00d8 1D4F      		sbci r17,-3
+ 336 00da 80E2      		ldi r24,lo8(32)
+ 337 00dc F801      		movw r30,r16
+ 338               		0:
+ 339 00de 1192      		st Z+,__zero_reg__
+ 340 00e0 8A95      		dec r24
+ 341 00e2 01F4      		brne 0b
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     int i = 0, total = 0;
+ 343               	.LM27:
+ 344 00e4 C12C      		mov r12,__zero_reg__
+ 345 00e6 D12C      		mov r13,__zero_reg__
+  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     while (i = uart_receive(buffer)) {
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         if (strstr(buffer, delimeter) > 0)
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****             break;
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         sprintf(resp + total, buffer);
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         memset(buffer, 0, sizeof(uint8_t) * 32);
+ 347               	.LM28:
+ 348 00e8 80E2      		ldi r24,lo8(32)
+ 349 00ea 782E      		mov r7,r24
+ 350               	.L20:
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     while (i = uart_receive(buffer)) {
+ 352               	.LM29:
+ 353 00ec C801      		movw r24,r16
+ 354 00ee 0E94 0000 		call uart_receive
+ 355 00f2 5C01      		movw r10,r24
+ 356 00f4 0097      		sbiw r24,0
+ 357 00f6 01F0      		breq .L21
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         if (strstr(buffer, delimeter) > 0)
+ 359               	.LM30:
+ 360 00f8 B401      		movw r22,r8
+ 361 00fa C801      		movw r24,r16
+ 362 00fc 0E94 0000 		call strstr
+ 363 0100 892B      		or r24,r25
+ 364 0102 01F4      		brne .L21
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         sprintf(resp + total, buffer);
+ 366               	.LM31:
+ 367 0104 1F93      		push r17
+ 368 0106 0F93      		push r16
+ 369 0108 C701      		movw r24,r14
+ 370 010a 8C0D      		add r24,r12
+ 371 010c 9D1D      		adc r25,r13
+ 372 010e 9F93      		push r25
+ 373 0110 8F93      		push r24
+ 374 0112 0E94 0000 		call sprintf
+ 376               	.LM32:
+ 377 0116 F801      		movw r30,r16
+ 378 0118 272D      		mov r18,r7
+ 379               		0:
+ 380 011a 1192      		st Z+,__zero_reg__
+ 381 011c 2A95      		dec r18
+ 382 011e 01F4      		brne 0b
+  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****         total += i;
+ 384               	.LM33:
+ 385 0120 CA0C      		add r12,r10
+ 386 0122 DB1C      		adc r13,r11
+ 387 0124 0F90      		pop __tmp_reg__
+ 388 0126 0F90      		pop __tmp_reg__
+ 389 0128 0F90      		pop __tmp_reg__
+ 390 012a 0F90      		pop __tmp_reg__
+ 391 012c 00C0      		rjmp .L20
+ 392               	.L21:
+  73:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     }
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     resp[i+1] = '\0';
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c ****     return resp;
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/uart.c **** }
+ 394               	.LM34:
+ 395 012e C701      		movw r24,r14
+ 396               	/* epilogue start */
+ 397 0130 C05E      		subi r28,-32
+ 398 0132 DD4F      		sbci r29,-3
+ 399 0134 0FB6      		in __tmp_reg__,__SREG__
+ 400 0136 F894      		cli
+ 401 0138 DEBF      		out __SP_H__,r29
+ 402 013a 0FBE      		out __SREG__,__tmp_reg__
+ 403 013c CDBF      		out __SP_L__,r28
+ 404 013e DF91      		pop r29
+ 405 0140 CF91      		pop r28
+ 406 0142 1F91      		pop r17
+ 407 0144 0F91      		pop r16
+ 408 0146 FF90      		pop r15
+ 409 0148 EF90      		pop r14
+ 410 014a DF90      		pop r13
+ 411 014c CF90      		pop r12
+ 412 014e BF90      		pop r11
+ 413 0150 AF90      		pop r10
+ 414 0152 9F90      		pop r9
+ 415 0154 8F90      		pop r8
+ 416 0156 7F90      		pop r7
+ 417 0158 0895      		ret
+ 425               	.Lscope5:
+ 427               	.Letext0:
+ 428               		.ident	"GCC: (GNU) 4.8.1"
+DEFINED SYMBOLS
+                            *ABS*:00000000 uart.c
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:115    .text:00000000 uart_init
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:168    .text:00000038 send_uart_char
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:202    .text:00000052 receive_uart_char
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:228    .text:00000060 uart_receive
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjDA6Nl.s:285    .text:0000008e uart_getall
+
+UNDEFINED SYMBOLS
+__udivmodsi4
+strstr
+sprintf

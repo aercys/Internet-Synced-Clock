@@ -1,0 +1,357 @@
+   1               		.file	"i2c.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   8               		.text
+   9               	.Ltext0:
+ 104               	.global	init_twi
+ 106               	init_twi:
+   1:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //
+   2:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //  i2c.c
+   3:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //  BMP180
+   4:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //
+   5:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //  Created by Atakan on 19/08/16.
+   6:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //  Copyright © 2016 Atakan. All rights reserved.
+   7:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** //
+   8:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+   9:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** #include "i2c.h"
+  10:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** #include <util/delay.h>
+  11:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  12:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** const uint8_t i2cdebug = 0;
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void init_twi() {
+ 108               	.LM0:
+ 109               	.LFBB1:
+ 110               	/* prologue: function */
+ 111               	/* frame size = 0 */
+ 112               	/* stack size = 0 */
+ 113               	.L__stack_usage = 0
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     // SCL Freq = CPU_CLK / (16 + 2 x (TWBR).(PrescalerValue))
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     // TWI clock frequency set 100.00kHz to work @8MHz Cpu Frequency
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWSR = 0x00; // Prescaler 1
+ 115               	.LM1:
+ 116 0000 1092 B900 		sts 185,__zero_reg__
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWBR = 0x32; // Decimal 32
+ 118               	.LM2:
+ 119 0004 82E3      		ldi r24,lo8(50)
+ 120 0006 8093 B800 		sts 184,r24
+ 121 000a 0895      		ret
+ 123               	.Lscope1:
+ 125               	.global	start_transmission
+ 127               	start_transmission:
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void start_transmission() {
+ 129               	.LM3:
+ 130               	.LFBB2:
+ 131               	/* prologue: function */
+ 132               	/* frame size = 0 */
+ 133               	/* stack size = 0 */
+ 134               	.L__stack_usage = 0
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+ 136               	.LM4:
+ 137 000c 84EA      		ldi r24,lo8(-92)
+ 138 000e 8093 BC00 		sts 188,r24
+ 139               	.L4:
+  24:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Info]\tStart condition send & waiting for ack... \n");
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT)));
+ 141               	.LM5:
+ 142 0012 8091 BC00 		lds r24,188
+ 143 0016 87FF      		sbrs r24,7
+ 144 0018 00C0      		rjmp .L4
+ 145               	.L6:
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while((TWSR & 0xF8) != TWI_START_SENT);
+ 147               	.LM6:
+ 148 001a 8091 B900 		lds r24,185
+ 149 001e 887F      		andi r24,lo8(-8)
+ 150 0020 8830      		cpi r24,lo8(8)
+ 151 0022 01F4      		brne .L6
+ 152               	/* epilogue start */
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Success]\tAck has been received.\n");
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+ 154               	.LM7:
+ 155 0024 0895      		ret
+ 157               	.Lscope2:
+ 159               	.global	end_transmission
+ 161               	end_transmission:
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void end_transmission() {
+ 163               	.LM8:
+ 164               	.LFBB3:
+ 165               	/* prologue: function */
+ 166               	/* frame size = 0 */
+ 167               	/* stack size = 0 */
+ 168               	.L__stack_usage = 0
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
+ 170               	.LM9:
+ 171 0026 84E9      		ldi r24,lo8(-108)
+ 172 0028 8093 BC00 		sts 188,r24
+ 173 002c 0895      		ret
+ 175               	.Lscope3:
+ 178               	.global	read_data
+ 180               	read_data:
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Info]\tTransmission has been ended.\n");
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void send_addr(uint8_t addr) {
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWDR = addr;
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR = (1<<TWINT) | (1<<TWEN);
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Info]\tAddress %#02x has been sent. Waiting for ack... \n", addr);
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT)));
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (TWI_SLAVE_W_ACK != (TWSR & 0xF8) && TWI_SLAVE_R_ACK != (TWSR & 0xF8)) {
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         terminate();
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     } else if (i2cdebug) {
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Success]\tAck has been received. \n");
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void send_data(uint8_t data) {
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWDR = data;
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Info]\tSending data (%#02x).\n", data);
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR = (1<<TWINT) | (1<<TWEN);
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT)));
+  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  73:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Success]\tData sent. Waiting for ack... \n");
+  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (TWI_DATA_SENT_ACK != (TWSR & 0xF8)) {
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         terminate();
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     } else if (i2cdebug) {
+  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Success]\tAck has been received.\n");
+  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  82:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  83:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+  84:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+  85:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** uint8_t read_data(short ack) {
+ 182               	.LM10:
+ 183               	.LFBB4:
+ 184               	/* prologue: function */
+ 185               	/* frame size = 0 */
+ 186               	/* stack size = 0 */
+ 187               	.L__stack_usage = 0
+  86:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+  87:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Info]\tReading data...\n");
+  88:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+  89:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  90:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (!ack)
+ 189               	.LM11:
+ 190 002e 892B      		or r24,r25
+ 191 0030 01F4      		brne .L10
+  91:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         TWCR = (1<<TWINT) | (1<<TWEN);
+ 193               	.LM12:
+ 194 0032 84E8      		ldi r24,lo8(-124)
+ 195 0034 00C0      		rjmp .L14
+ 196               	.L10:
+  92:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     else
+  93:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
+ 198               	.LM13:
+ 199 0036 84EC      		ldi r24,lo8(-60)
+ 200               	.L14:
+ 201 0038 8093 BC00 		sts 188,r24
+ 202               	.L13:
+  94:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  95:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT)));
+ 204               	.LM14:
+ 205 003c 8091 BC00 		lds r24,188
+ 206 0040 87FF      		sbrs r24,7
+ 207 0042 00C0      		rjmp .L13
+  96:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     //if (TWI_DATA_RECV_ACK != (TWSR & 0xF8))
+  97:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         //terminate();
+  98:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+  99:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (i2cdebug) {
+ 100:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         printf("[Success]\tData (%#02x) has been read successfuly.\n", TWDR);
+ 101:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     }
+ 102:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+ 103:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     return TWDR;
+ 209               	.LM15:
+ 210 0044 8091 BB00 		lds r24,187
+ 104:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     
+ 105:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+ 212               	.LM16:
+ 213 0048 0895      		ret
+ 215               	.Lscope4:
+ 217               	.global	restart
+ 219               	restart:
+ 106:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+ 107:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void restart(void)
+ 108:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** {
+ 221               	.LM17:
+ 222               	.LFBB5:
+ 223               	/* prologue: function */
+ 224               	/* frame size = 0 */
+ 225               	/* stack size = 0 */
+ 226               	.L__stack_usage = 0
+ 109:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     // Clear TWI interrupt flag, Put start condition on SDA, Enable TWI
+ 110:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR= (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
+ 228               	.LM18:
+ 229 004a 84EA      		ldi r24,lo8(-92)
+ 230 004c 8093 BC00 		sts 188,r24
+ 231               	.L17:
+ 111:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT))); // wait till restart condition is transmitted
+ 233               	.LM19:
+ 234 0050 8091 BC00 		lds r24,188
+ 235 0054 87FF      		sbrs r24,7
+ 236 0056 00C0      		rjmp .L17
+ 237               	.L19:
+ 112:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while((TWSR & 0xF8)!= TWI_R_START_SENT); // Check for the acknoledgement
+ 239               	.LM20:
+ 240 0058 8091 B900 		lds r24,185
+ 241 005c 887F      		andi r24,lo8(-8)
+ 242 005e 8031      		cpi r24,lo8(16)
+ 243 0060 01F4      		brne .L19
+ 244               	/* epilogue start */
+ 113:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** }
+ 246               	.LM21:
+ 247 0062 0895      		ret
+ 249               	.Lscope5:
+ 250               		.section	.rodata.str1.1,"aMS",@progbits,1
+ 251               	.LC0:
+ 252 0000 5B45 7272 		.string	"[Error]\tThere is an error occured while transmission. (NACK)"
+ 252      6F72 5D09 
+ 252      5468 6572 
+ 252      6520 6973 
+ 252      2061 6E20 
+ 253               		.text
+ 255               	.global	terminate
+ 257               	terminate:
+ 114:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+ 115:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** 
+ 116:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void terminate() {
+ 259               	.LM22:
+ 260               	.LFBB6:
+ 261               	/* prologue: function */
+ 262               	/* frame size = 0 */
+ 263               	/* stack size = 0 */
+ 264               	.L__stack_usage = 0
+ 117:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     printf("[Error]\tThere is an error occured while transmission. (NACK)\n");
+ 266               	.LM23:
+ 267 0064 80E0      		ldi r24,lo8(.LC0)
+ 268 0066 90E0      		ldi r25,hi8(.LC0)
+ 269 0068 0C94 0000 		jmp puts
+ 271               	.Lscope6:
+ 274               	.global	send_addr
+ 276               	send_addr:
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void send_addr(uint8_t addr) {
+ 278               	.LM24:
+ 279               	.LFBB7:
+ 280               	/* prologue: function */
+ 281               	/* frame size = 0 */
+ 282               	/* stack size = 0 */
+ 283               	.L__stack_usage = 0
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWDR = addr;
+ 285               	.LM25:
+ 286 006c 8093 BB00 		sts 187,r24
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR = (1<<TWINT) | (1<<TWEN);
+ 288               	.LM26:
+ 289 0070 84E8      		ldi r24,lo8(-124)
+ 290 0072 8093 BC00 		sts 188,r24
+ 291               	.L23:
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT)));
+ 293               	.LM27:
+ 294 0076 8091 BC00 		lds r24,188
+ 295 007a 87FF      		sbrs r24,7
+ 296 007c 00C0      		rjmp .L23
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (TWI_SLAVE_W_ACK != (TWSR & 0xF8) && TWI_SLAVE_R_ACK != (TWSR & 0xF8)) {
+ 298               	.LM28:
+ 299 007e 8091 B900 		lds r24,185
+ 300 0082 887F      		andi r24,lo8(-8)
+ 301 0084 8831      		cpi r24,lo8(24)
+ 302 0086 01F0      		breq .L21
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (TWI_SLAVE_W_ACK != (TWSR & 0xF8) && TWI_SLAVE_R_ACK != (TWSR & 0xF8)) {
+ 304               	.LM29:
+ 305 0088 8091 B900 		lds r24,185
+ 306 008c 887F      		andi r24,lo8(-8)
+ 307 008e 8034      		cpi r24,lo8(64)
+ 308 0090 01F0      		breq .L21
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         terminate();
+ 310               	.LM30:
+ 311 0092 0C94 0000 		jmp terminate
+ 312               	.L21:
+ 313 0096 0895      		ret
+ 315               	.Lscope7:
+ 318               	.global	send_data
+ 320               	send_data:
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c **** void send_data(uint8_t data) {
+ 322               	.LM31:
+ 323               	.LFBB8:
+ 324               	/* prologue: function */
+ 325               	/* frame size = 0 */
+ 326               	/* stack size = 0 */
+ 327               	.L__stack_usage = 0
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWDR = data;
+ 329               	.LM32:
+ 330 0098 8093 BB00 		sts 187,r24
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     TWCR = (1<<TWINT) | (1<<TWEN);
+ 332               	.LM33:
+ 333 009c 84E8      		ldi r24,lo8(-124)
+ 334 009e 8093 BC00 		sts 188,r24
+ 335               	.L33:
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     while(!(TWCR & (1<<TWINT)));
+ 337               	.LM34:
+ 338 00a2 8091 BC00 		lds r24,188
+ 339 00a6 87FF      		sbrs r24,7
+ 340 00a8 00C0      		rjmp .L33
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****     if (TWI_DATA_SENT_ACK != (TWSR & 0xF8)) {
+ 342               	.LM35:
+ 343 00aa 8091 B900 		lds r24,185
+ 344 00ae 887F      		andi r24,lo8(-8)
+ 345 00b0 8832      		cpi r24,lo8(40)
+ 346 00b2 01F0      		breq .L31
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/i2c.c ****         terminate();
+ 348               	.LM36:
+ 349 00b4 0C94 0000 		jmp terminate
+ 350               	.L31:
+ 351 00b8 0895      		ret
+ 353               	.Lscope8:
+ 354               	.global	i2cdebug
+ 355               		.section	.rodata
+ 358               	i2cdebug:
+ 359 0000 00        		.zero	1
+ 361               		.text
+ 363               	.Letext0:
+ 364               		.ident	"GCC: (GNU) 4.8.1"
+ 365               	.global __do_copy_data
+DEFINED SYMBOLS
+                            *ABS*:00000000 i2c.c
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:106    .text:00000000 init_twi
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:127    .text:0000000c start_transmission
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:161    .text:00000026 end_transmission
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:180    .text:0000002e read_data
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:219    .text:0000004a restart
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:257    .text:00000064 terminate
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:276    .text:0000006c send_addr
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:320    .text:00000098 send_data
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccNAAOna.s:358    .rodata:00000000 i2cdebug
+
+UNDEFINED SYMBOLS
+puts
+__do_copy_data
