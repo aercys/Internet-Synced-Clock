@@ -20,11 +20,12 @@
   10:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** #include "rtc.h"
   11:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** #include "espwifi.h"
   12:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** FILE uart_output = FDEV_SETUP_STREAM(send_uart_char, NULL, _FDEV_SETUP_WRITE);
-  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** volatile second_ticks = 0;
-  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** ISR(TIMER2_OVF_vect) {
+  13:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  14:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** FILE uart_output = FDEV_SETUP_STREAM(send_uart_char, NULL, _FDEV_SETUP_WRITE);
+  15:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  16:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** volatile second_ticks = 0;
+  17:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** ISR(TIMER2_OVF_vect) {
  126               	.LM0:
  127               	.LFBB1:
  128 0000 1F92      		push r1
@@ -48,10 +49,10 @@
  146               	/* frame size = 0 */
  147               	/* stack size = 15 */
  148               	.L__stack_usage = 15
-  18:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     update_rtc();
+  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     update_rtc();
  150               	.LM1:
  151 0022 0E94 0000 		call update_rtc
-  19:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     if (second_ticks++ == 5) {
+  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     if (second_ticks++ == 5) {
  153               	.LM2:
  154 0026 8091 0000 		lds r24,second_ticks
  155 002a 9091 0000 		lds r25,second_ticks+1
@@ -62,14 +63,14 @@
  160 0038 2093 0000 		sts second_ticks,r18
  161 003c 0597      		sbiw r24,5
  162 003e 01F4      		brne .L1
-  20:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****         second_ticks = 0;
+  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****         second_ticks = 0;
  164               	.LM3:
  165 0040 1092 0000 		sts second_ticks+1,__zero_reg__
  166 0044 1092 0000 		sts second_ticks,__zero_reg__
  167               	.L1:
  168               	/* epilogue start */
-  21:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     }
-  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
+  22:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     }
+  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
  170               	.LM4:
  171 0048 FF91      		pop r31
  172 004a EF91      		pop r30
@@ -109,9 +110,9 @@
  207               		.text
  211               	.global	lcd_msg
  213               	lcd_msg:
-  23:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
   24:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** void lcd_msg(unsigned char *fmt, uint8_t line, ...) {
+  25:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** void lcd_msg(unsigned char *fmt, uint8_t line, ...) {
  215               	.LM5:
  216               	.LFBB2:
  217 006a FF92      		push r15
@@ -132,15 +133,15 @@
  232               	/* stack size = 20 */
  233               	.L__stack_usage = 20
  234 0084 F98C      		ldd r15,Y+25
-  26:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     va_list aptr;
-  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     unsigned char *lcd_buffer = malloc(sizeof(unsigned char *) * 20);
+  27:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     va_list aptr;
+  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     unsigned char *lcd_buffer = malloc(sizeof(unsigned char *) * 20);
  236               	.LM6:
  237 0086 88E2      		ldi r24,lo8(40)
  238 0088 90E0      		ldi r25,0
  239 008a 0E94 0000 		call malloc
  240 008e 8C01      		movw r16,r24
-  28:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
-  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     unsigned char padding[15] = {0x20, 0x20, 0x20, 0x20, 0x20,
+  29:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     unsigned char padding[15] = {0x20, 0x20, 0x20, 0x20, 0x20,
  242               	.LM7:
  243 0090 8FE0      		ldi r24,lo8(15)
  244 0092 E0E0      		ldi r30,lo8(.LC0)
@@ -152,19 +153,19 @@
  250 009c 0D92      		st X+,r0
  251 009e 8A95      		dec r24
  252 00a0 01F4      		brne 0b
-  30:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****                                 0x20, 0x20, 0x20, 0x20, 0x20,
-  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****                                 0x20, 0x20, 0x20, 0x20, '\0'};
-  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
-  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     if (line < 1) line = 1;
+  31:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****                                 0x20, 0x20, 0x20, 0x20, 0x20,
+  32:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****                                 0x20, 0x20, 0x20, 0x20, '\0'};
+  33:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     if (line < 1) line = 1;
  254               	.LM8:
  255 00a2 F110      		cpse r15,__zero_reg__
  256 00a4 00C0      		rjmp .L5
  257 00a6 FF24      		clr r15
  258 00a8 F394      		inc r15
  259               	.L5:
-  34:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
-  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     va_start(aptr, fmt);
-  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     vsprintf(lcd_buffer, fmt, aptr);
+  35:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  36:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     va_start(aptr, fmt);
+  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     vsprintf(lcd_buffer, fmt, aptr);
  261               	.LM9:
  262 00aa AE01      		movw r20,r28
  263 00ac 465E      		subi r20,-26
@@ -173,32 +174,32 @@
  266 00b2 788D      		ldd r23,Y+24
  267 00b4 C801      		movw r24,r16
  268 00b6 0E94 0000 		call vsprintf
-  37:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_gotoxy(0, line - 1);
+  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_gotoxy(0, line - 1);
  270               	.LM10:
  271 00ba FA94      		dec r15
  272 00bc 6F2D      		mov r22,r15
  273 00be 80E0      		ldi r24,0
  274 00c0 0E94 0000 		call lcd_gotoxy
-  38:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_puts((unsigned char *) padding);
+  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_puts((unsigned char *) padding);
  276               	.LM11:
  277 00c4 CE01      		movw r24,r28
  278 00c6 0196      		adiw r24,1
  279 00c8 0E94 0000 		call lcd_puts
-  39:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_gotoxy(0, line - 1);
+  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_gotoxy(0, line - 1);
  281               	.LM12:
  282 00cc 6F2D      		mov r22,r15
  283 00ce 80E0      		ldi r24,0
  284 00d0 0E94 0000 		call lcd_gotoxy
-  40:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_puts(lcd_buffer);
+  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_puts(lcd_buffer);
  286               	.LM13:
  287 00d4 C801      		movw r24,r16
  288 00d6 0E94 0000 		call lcd_puts
-  41:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     free(lcd_buffer);
+  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     free(lcd_buffer);
  290               	.LM14:
  291 00da C801      		movw r24,r16
  292 00dc 0E94 0000 		call free
  293               	/* epilogue start */
-  42:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
+  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
  295               	.LM15:
  296 00e0 2F96      		adiw r28,15
  297 00e2 0FB6      		in __tmp_reg__,__SREG__
@@ -228,8 +229,8 @@
  320               		.text
  322               	.global	update_display
  324               	update_display:
-  43:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** void update_display() {
+  44:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** void update_display() {
  326               	.LM16:
  327               	.LFBB3:
  328 00f8 0F93      		push r16
@@ -240,13 +241,13 @@
  333               	/* frame size = 0 */
  334               	/* stack size = 4 */
  335               	.L__stack_usage = 4
-  45:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     calculate();
+  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     calculate();
  337               	.LM17:
  338 0100 0E94 0000 		call calculate
-  46:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_clrscr();
+  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_clrscr();
  340               	.LM18:
  341 0104 0E94 0000 		call lcd_clrscr
-  47:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("%.2f %cC %02d:%02d", 1, (float) get_temperature(), (char) 223, get_hour(), get_minute(
+  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("%.2f %cC %02d:%02d", 1, (float) get_temperature(), (char) 223, get_hour(), get_minute(
  343               	.LM19:
  344 0108 0E94 0000 		call get_minute
  345 010c 182F      		mov r17,r24
@@ -272,7 +273,7 @@
  365 0138 9F93      		push r25
  366 013a 8F93      		push r24
  367 013c 0E94 0000 		call lcd_msg
-  48:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("%02d/%02d/%02d", 2, get_day(), get_month(), get_year());
+  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("%02d/%02d/%02d", 2, get_day(), get_month(), get_year());
  369               	.LM20:
  370 0140 0E94 0000 		call get_year
  371 0144 182F      		mov r17,r24
@@ -481,8 +482,8 @@
  413               	.LBE7:
  414               	.LBE6:
  416               	.Ltext2:
-  49:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     _delay_ms(1000);
-  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
+  50:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     _delay_ms(1000);
+  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
  418               	.LM22:
  419 0190 DF91      		pop r29
  420 0192 CF91      		pop r28
@@ -532,8 +533,8 @@
  447               		.text
  449               	.global	system_init
  451               	system_init:
-  51:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** void system_init() {
+  52:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** void system_init() {
  453               	.LM23:
  454               	.LFBB4:
  455 019a FF92      		push r15
@@ -545,19 +546,20 @@
  461               	/* frame size = 0 */
  462               	/* stack size = 5 */
  463               	.L__stack_usage = 5
-  53:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_init(LCD_DISP_ON);
+  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_init(LCD_DISP_ON);
  465               	.LM24:
  466 01a4 8CE0      		ldi r24,lo8(12)
  467 01a6 0E94 0000 		call lcd_init
-  54:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_clrscr();
+  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_clrscr();
  469               	.LM25:
  470 01aa 0E94 0000 		call lcd_clrscr
-  55:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_puts("Init System!\n");
+  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_puts("Init System!\n");
  472               	.LM26:
  473 01ae 80E0      		ldi r24,lo8(.LC3)
  474 01b0 90E0      		ldi r25,hi8(.LC3)
  475 01b2 0E94 0000 		call lcd_puts
-  56:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Wifi: %s\n", 2, "[Init]");
+  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Wifi: %s\n", 2, "[Init]");
  477               	.LM27:
  478 01b6 80E0      		ldi r24,lo8(.LC4)
  479 01b8 90E0      		ldi r25,hi8(.LC4)
@@ -570,7 +572,7 @@
  486 01c6 9F93      		push r25
  487 01c8 8F93      		push r24
  488 01ca 0E94 0000 		call lcd_msg
-  57:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     if (init_wifi_module())
+  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     if (init_wifi_module())
  490               	.LM28:
  491 01ce 0E94 0000 		call init_wifi_module
  492 01d2 0F90      		pop __tmp_reg__
@@ -580,14 +582,14 @@
  496 01da 0F90      		pop __tmp_reg__
  497 01dc 892B      		or r24,r25
  498 01de 01F0      		breq .L9
-  58:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Wifi: %s", 2, "[Ok]");
+  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Wifi: %s", 2, "[Ok]");
  500               	.LM29:
  501 01e0 80E0      		ldi r24,lo8(.LC6)
  502 01e2 90E0      		ldi r25,hi8(.LC6)
  503 01e4 00C0      		rjmp .L11
  504               	.L9:
-  59:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     else
-  60:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Wifi: %s", 2, "[Fail]");
+  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     else
+  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Wifi: %s", 2, "[Fail]");
  506               	.LM30:
  507 01e6 80E0      		ldi r24,lo8(.LC8)
  508 01e8 90E0      		ldi r25,hi8(.LC8)
@@ -605,7 +607,7 @@
  520 0200 0F90      		pop __tmp_reg__
  521 0202 0F90      		pop __tmp_reg__
  522 0204 0F90      		pop __tmp_reg__
-  61:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Sensor: %s", 2, "[Busy]");
+  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Sensor: %s", 2, "[Busy]");
  524               	.LM31:
  525 0206 C0E0      		ldi r28,lo8(.LC9)
  526 0208 D0E0      		ldi r29,hi8(.LC9)
@@ -619,12 +621,12 @@
  534 0218 1F93      		push r17
  535 021a 0F93      		push r16
  536 021c 0E94 0000 		call lcd_msg
-  62:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     init_sensor(bmp180_mode_0);
+  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     init_sensor(bmp180_mode_0);
  538               	.LM32:
  539 0220 80E0      		ldi r24,0
  540 0222 90E0      		ldi r25,0
  541 0224 0E94 0000 		call init_sensor
-  63:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Sensor: %s", 2, "[Ok]");
+  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Sensor: %s", 2, "[Ok]");
  543               	.LM33:
  544 0228 80E0      		ldi r24,lo8(.LC6)
  545 022a 90E0      		ldi r25,hi8(.LC6)
@@ -634,7 +636,7 @@
  549 0232 1F93      		push r17
  550 0234 0F93      		push r16
  551 0236 0E94 0000 		call lcd_msg
-  64:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Timer: %s", 2, "[Busy]");
+  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Timer: %s", 2, "[Busy]");
  553               	.LM34:
  554 023a DF93      		push r29
  555 023c CF93      		push r28
@@ -644,16 +646,16 @@
  559 0244 9F93      		push r25
  560 0246 8F93      		push r24
  561 0248 0E94 0000 		call lcd_msg
-  65:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     init_timer();
+  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     init_timer();
  563               	.LM35:
  564 024c 0E94 0000 		call init_timer
-  66:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     sei();
+  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     sei();
  566               	.LM36:
  567               	/* #APP */
- 568               	 ;  66 "/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c" 1
+ 568               	 ;  68 "/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c" 1
  569 0250 7894      		sei
  570               	 ;  0 "" 2
-  67:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Timer: %s", 2, "[Ok]");
+  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("Timer: %s", 2, "[Ok]");
  572               	.LM37:
  573               	/* #NOAPP */
  574 0252 80E0      		ldi r24,lo8(.LC6)
@@ -667,10 +669,10 @@
  582 0262 9F93      		push r25
  583 0264 8F93      		push r24
  584 0266 0E94 0000 		call lcd_msg
-  68:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_clrscr();
+  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_clrscr();
  586               	.LM38:
  587 026a 0E94 0000 		call lcd_clrscr
-  69:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("System started!", 1);
+  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     lcd_msg("System started!", 1);
  589               	.LM39:
  590 026e 81E0      		ldi r24,lo8(1)
  591 0270 8F93      		push r24
@@ -688,7 +690,7 @@
  603 028a 0FBE      		out __SREG__,__tmp_reg__
  604 028c 8DBF      		out __SP_L__,r24
  605               	/* epilogue start */
-  70:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
+  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** }
  607               	.LM40:
  608 028e DF91      		pop r29
  609 0290 CF91      		pop r28
@@ -700,31 +702,31 @@
  616               		.section	.text.startup,"ax",@progbits
  618               	.global	main
  620               	main:
-  71:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  72:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
   73:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
-  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** int main(void) {
+  74:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** 
+  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c **** int main(void) {
  622               	.LM41:
  623               	.LFBB5:
  624               	/* prologue: function */
  625               	/* frame size = 0 */
  626               	/* stack size = 0 */
  627               	.L__stack_usage = 0
-  75:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
-  76:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     stdout = &uart_output;
+  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     stdout = &uart_output;
  629               	.LM42:
  630 0000 80E0      		ldi r24,lo8(uart_output)
  631 0002 90E0      		ldi r25,hi8(uart_output)
  632 0004 9093 0000 		sts __iob+2+1,r25
  633 0008 8093 0000 		sts __iob+2,r24
-  77:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
-  78:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     system_init();
+  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     system_init();
  635               	.LM43:
  636 000c 0E94 0000 		call system_init
  637               	.L13:
-  79:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
-  80:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     while (1) {
-  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****         update_display();
+  81:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     
+  82:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****     while (1) {
+  83:/Users/atakane/Documents/Electronics/IoClock/IoClock/main.c ****         update_display();
  639               	.LM44:
  640 0010 0E94 0000 		call update_display
  641               	.LBB8:
@@ -764,18 +766,18 @@
  685               	.global __do_clear_bss
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:2      *ABS*:0000003e __SP_H__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:3      *ABS*:0000003d __SP_L__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:4      *ABS*:0000003f __SREG__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:5      *ABS*:00000000 __tmp_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:6      *ABS*:00000001 __zero_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:124    .text:00000000 __vector_9
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:665    .bss:00000000 second_ticks
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:213    .text:0000006a lcd_msg
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:324    .text:000000f8 update_display
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:451    .text:0000019a system_init
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:620    .text.startup:00000000 main
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccPHhMmD.s:671    .data:00000000 uart_output
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:124    .text:00000000 __vector_9
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:665    .bss:00000000 second_ticks
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:213    .text:0000006a lcd_msg
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:324    .text:000000f8 update_display
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:451    .text:0000019a system_init
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:620    .text.startup:00000000 main
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:671    .data:00000000 uart_output
 
 UNDEFINED SYMBOLS
 update_rtc

@@ -10,6 +10,7 @@
 #include "rtc.h"
 #include "espwifi.h"
 
+
 FILE uart_output = FDEV_SETUP_STREAM(send_uart_char, NULL, _FDEV_SETUP_WRITE);
 
 volatile second_ticks = 0;
@@ -50,6 +51,7 @@ void update_display() {
 }
 
 void system_init() {
+    
     lcd_init(LCD_DISP_ON);
     lcd_clrscr();
     lcd_puts("Init System!\n");

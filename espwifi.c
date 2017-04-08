@@ -2,7 +2,7 @@
 //  espwifi.c
 //  TemperatureServer
 //
-//  Created by Atakan ERCIYAS on 29/03/2017.
+//  Created by Atakan E on 29/03/2017.
 //  Copyright © 2017 aercys. All rights reserved.
 //
 

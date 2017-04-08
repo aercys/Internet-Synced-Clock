@@ -2,7 +2,7 @@
 //  rtc.h
 //  TemperatureServer
 //
-//  Created by Atakan ERCIYAS on 03/04/2017.
+//  Created by Atakan E on 03/04/2017.
 //  Copyright © 2017 aercys. All rights reserved.
 //
 

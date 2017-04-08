@@ -2,7 +2,7 @@
 //  rtc.c
 //  TemperatureServer
 //
-//  Created by Atakan ERCIYAS on 03/04/2017.
+//  Created by Atakan E on 03/04/2017.
 //  Copyright © 2017 aercys. All rights reserved.
 //
 
@@ -38,7 +38,7 @@ char *make_time_request() {
     printf(CIP_SEND, strlen(GET_REQUEST_STR) + strlen("http://erciyas.biz/time.php") - 2);
     uart_getall("OK");
     printf(GET_REQUEST_STR, "http://erciyas.biz/time.php");
-    return uart_getall("CLOSED");;
+    return uart_getall("CLOSED");
 }
 
 void init_timer() {
