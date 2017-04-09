@@ -117,7 +117,7 @@
  113               	.L__stack_usage = 0
  103:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_high();
  115               	.LM1:
- 116 0000 289A      		sbi 0x5,0
+ 116 0000 2D9A      		sbi 0x5,5
  117               	.LBB28:
  118               	.LBB29:
  120               	.Ltext1:
@@ -377,7 +377,7 @@
  104:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_delay();
  105:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_low();
  132               	.LM3:
- 133 000a 2898      		cbi 0x5,0
+ 133 000a 2D98      		cbi 0x5,5
  134 000c 0895      		ret
  136               	.Lscope1:
  141               	lcd_write:
@@ -415,18 +415,18 @@
  157 001a 01F0      		breq .L3
  124:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        lcd_rs_high();
  159               	.LM6:
- 160 001c 5F9A      		sbi 0xb,7
+ 160 001c 419A      		sbi 0x8,1
  161 001e 00C0      		rjmp .L4
  162               	.L3:
  125:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     } else {         /* write instruction (RS=0, RW=0) */
  126:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****        lcd_rs_low();
  164               	.LM7:
- 165 0020 5F98      		cbi 0xb,7
+ 165 0020 4198      		cbi 0x8,1
  166               	.L4:
  127:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
  128:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_rw_low();    /* RW=0  write mode      */
  168               	.LM8:
- 169 0022 5E98      		cbi 0xb,6
+ 169 0022 4098      		cbi 0x8,0
  129:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** 
  130:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( ( &LCD_DATA0_PORT == &LCD_DATA1_PORT) && ( &LCD_DATA1_PORT == &LCD_DATA2_PORT ) && ( &LCD_
  131:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && (LCD_DATA0_PIN == 0) && (LCD_DATA1_PIN == 1) && (LCD_DATA2_PIN == 2) && (LCD_DATA3_PIN == 
@@ -451,53 +451,53 @@
  150:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure data pins as output */
  151:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= _BV(LCD_DATA0_PIN);
  171               	.LM9:
- 172 0024 3B9A      		sbi 0x7,3
+ 172 0024 249A      		sbi 0x4,4
  152:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA1_PORT) |= _BV(LCD_DATA1_PIN);
  174               	.LM10:
- 175 0026 3A9A      		sbi 0x7,2
+ 175 0026 239A      		sbi 0x4,3
  153:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA2_PORT) |= _BV(LCD_DATA2_PIN);
  177               	.LM11:
- 178 0028 399A      		sbi 0x7,1
+ 178 0028 229A      		sbi 0x4,2
  154:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
  180               	.LM12:
- 181 002a 389A      		sbi 0x7,0
+ 181 002a 219A      		sbi 0x4,1
  155:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         
  156:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* output high nibble first */
  157:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA3_PORT &= ~_BV(LCD_DATA3_PIN);
  183               	.LM13:
- 184 002c 4098      		cbi 0x8,0
+ 184 002c 2998      		cbi 0x5,1
  158:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA2_PORT &= ~_BV(LCD_DATA2_PIN);
  186               	.LM14:
- 187 002e 4198      		cbi 0x8,1
+ 187 002e 2A98      		cbi 0x5,2
  159:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA1_PORT &= ~_BV(LCD_DATA1_PIN);
  189               	.LM15:
- 190 0030 4298      		cbi 0x8,2
+ 190 0030 2B98      		cbi 0x5,3
  160:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
  192               	.LM16:
- 193 0032 4398      		cbi 0x8,3
+ 193 0032 2C98      		cbi 0x5,4
  161:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x80) LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
  195               	.LM17:
  196 0034 87FD      		sbrc r24,7
  198               	.LM18:
- 199 0036 409A      		sbi 0x8,0
+ 199 0036 299A      		sbi 0x5,1
  200               	.L5:
  162:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x40) LCD_DATA2_PORT |= _BV(LCD_DATA2_PIN);
  202               	.LM19:
  203 0038 86FD      		sbrc r24,6
  205               	.LM20:
- 206 003a 419A      		sbi 0x8,1
+ 206 003a 2A9A      		sbi 0x5,2
  207               	.L6:
  163:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x20) LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);
  209               	.LM21:
  210 003c 85FD      		sbrc r24,5
  212               	.LM22:
- 213 003e 429A      		sbi 0x8,2
+ 213 003e 2B9A      		sbi 0x5,3
  214               	.L7:
  164:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x10) LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);   
  216               	.LM23:
  217 0040 84FD      		sbrc r24,4
  219               	.LM24:
- 220 0042 439A      		sbi 0x8,3
+ 220 0042 2C9A      		sbi 0x5,4
  221               	.L8:
  165:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_toggle();
  223               	.LM25:
@@ -507,40 +507,40 @@
  167:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* output low nibble */
  168:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA3_PORT &= ~_BV(LCD_DATA3_PIN);
  227               	.LM26:
- 228 004a 4098      		cbi 0x8,0
+ 228 004a 2998      		cbi 0x5,1
  169:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA2_PORT &= ~_BV(LCD_DATA2_PIN);
  230               	.LM27:
- 231 004c 4198      		cbi 0x8,1
+ 231 004c 2A98      		cbi 0x5,2
  170:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA1_PORT &= ~_BV(LCD_DATA1_PIN);
  233               	.LM28:
- 234 004e 4298      		cbi 0x8,2
+ 234 004e 2B98      		cbi 0x5,3
  171:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
  236               	.LM29:
- 237 0050 4398      		cbi 0x8,3
+ 237 0050 2C98      		cbi 0x5,4
  172:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x08) LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
  239               	.LM30:
  240 0052 8981      		ldd r24,Y+1
  241 0054 83FD      		sbrc r24,3
  243               	.LM31:
- 244 0056 409A      		sbi 0x8,0
+ 244 0056 299A      		sbi 0x5,1
  245               	.L9:
  173:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x04) LCD_DATA2_PORT |= _BV(LCD_DATA2_PIN);
  247               	.LM32:
  248 0058 82FD      		sbrc r24,2
  250               	.LM33:
- 251 005a 419A      		sbi 0x8,1
+ 251 005a 2A9A      		sbi 0x5,2
  252               	.L10:
  174:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x02) LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);
  254               	.LM34:
  255 005c 81FD      		sbrc r24,1
  257               	.LM35:
- 258 005e 429A      		sbi 0x8,2
+ 258 005e 2B9A      		sbi 0x5,3
  259               	.L11:
  175:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     	if(data & 0x01) LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);
  261               	.LM36:
  262 0060 80FD      		sbrc r24,0
  264               	.LM37:
- 265 0062 439A      		sbi 0x8,3
+ 265 0062 2C9A      		sbi 0x5,4
  266               	.L12:
  176:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_toggle();        
  268               	.LM38:
@@ -549,16 +549,16 @@
  178:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* all data pins high (inactive) */
  179:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);
  271               	.LM39:
- 272 0068 439A      		sbi 0x8,3
+ 272 0068 2C9A      		sbi 0x5,4
  180:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);
  274               	.LM40:
- 275 006a 429A      		sbi 0x8,2
+ 275 006a 2B9A      		sbi 0x5,3
  181:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA2_PORT |= _BV(LCD_DATA2_PIN);
  277               	.LM41:
- 278 006c 419A      		sbi 0x8,1
+ 278 006c 2A9A      		sbi 0x5,2
  182:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         LCD_DATA3_PORT |= _BV(LCD_DATA3_PIN);
  280               	.LM42:
- 281 006e 409A      		sbi 0x8,0
+ 281 006e 299A      		sbi 0x5,1
  282               	/* epilogue start */
  183:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
  184:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
@@ -599,10 +599,10 @@
  206:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     else
  207:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_rs_low();                        /* RS=0: read busy flag */
  302               	.LM45:
- 303 0078 5F98      		cbi 0xb,7
+ 303 0078 4198      		cbi 0x8,1
  208:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_rw_high();                           /* RW=1  read mode      */
  305               	.LM46:
- 306 007a 5E9A      		sbi 0xb,6
+ 306 007a 409A      		sbi 0x8,0
  209:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     
  210:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     if ( ( &LCD_DATA0_PORT == &LCD_DATA1_PORT) && ( &LCD_DATA1_PORT == &LCD_DATA2_PORT ) && ( &LCD_
  211:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****       && ( LCD_DATA0_PIN == 0 )&& (LCD_DATA1_PIN == 1) && (LCD_DATA2_PIN == 2) && (LCD_DATA3_PIN ==
@@ -626,21 +626,21 @@
  229:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure data pins as input */
  230:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) &= ~_BV(LCD_DATA0_PIN);
  308               	.LM47:
- 309 007c 3B98      		cbi 0x7,3
+ 309 007c 2498      		cbi 0x4,4
  231:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA1_PORT) &= ~_BV(LCD_DATA1_PIN);
  311               	.LM48:
- 312 007e 3A98      		cbi 0x7,2
+ 312 007e 2398      		cbi 0x4,3
  232:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA2_PORT) &= ~_BV(LCD_DATA2_PIN);
  314               	.LM49:
- 315 0080 3998      		cbi 0x7,1
+ 315 0080 2298      		cbi 0x4,2
  233:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA3_PORT) &= ~_BV(LCD_DATA3_PIN);
  317               	.LM50:
- 318 0082 3898      		cbi 0x7,0
+ 318 0082 2198      		cbi 0x4,1
  234:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****                 
  235:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* read high nibble first */
  236:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_high();
  320               	.LM51:
- 321 0084 289A      		sbi 0x5,0
+ 321 0084 2D9A      		sbi 0x5,5
  322               	.LBB30:
  323               	.LBB31:
  325               	.Ltext3:
@@ -656,7 +656,7 @@
  238:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         data = 0;
  239:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA0_PORT) & _BV(LCD_DATA0_PIN) ) data |= 0x10;
  337               	.LM53:
- 338 008e 3399      		sbic 0x6,3
+ 338 008e 1C99      		sbic 0x3,4
  339 0090 00C0      		rjmp .L44
  238:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         data = 0;
  341               	.LM54:
@@ -668,22 +668,22 @@
  348               	.L36:
  240:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA1_PORT) & _BV(LCD_DATA1_PIN) ) data |= 0x20;
  350               	.LM56:
- 351 0098 3299      		sbic 0x6,2
+ 351 0098 1B99      		sbic 0x3,3
  352 009a 8062      		ori r24,lo8(32)
  353               	.L37:
  241:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA2_PORT) & _BV(LCD_DATA2_PIN) ) data |= 0x40;
  355               	.LM57:
- 356 009c 3199      		sbic 0x6,1
+ 356 009c 1A99      		sbic 0x3,2
  357 009e 8064      		ori r24,lo8(64)
  358               	.L38:
  242:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA3_PORT) & _BV(LCD_DATA3_PIN) ) data |= 0x80;
  360               	.LM58:
- 361 00a0 3099      		sbic 0x6,0
+ 361 00a0 1999      		sbic 0x3,1
  362 00a2 8068      		ori r24,lo8(-128)
  363               	.L39:
  243:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_low();
  365               	.LM59:
- 366 00a4 2898      		cbi 0x5,0
+ 366 00a4 2D98      		cbi 0x5,5
  367               	.LBB32:
  368               	.LBB33:
  370               	.Ltext5:
@@ -701,7 +701,7 @@
  247:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* read low nibble */    
  248:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_high();
  382               	.LM61:
- 383 00ae 289A      		sbi 0x5,0
+ 383 00ae 2D9A      		sbi 0x5,5
  384               	.LBB34:
  385               	.LBB35:
  387               	.Ltext7:
@@ -716,27 +716,27 @@
  249:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_delay();
  250:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA0_PORT) & _BV(LCD_DATA0_PIN) ) data |= 0x01;
  399               	.LM63:
- 400 00b8 3399      		sbic 0x6,3
+ 400 00b8 1C99      		sbic 0x3,4
  401 00ba 8160      		ori r24,lo8(1)
  402               	.L40:
  251:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA1_PORT) & _BV(LCD_DATA1_PIN) ) data |= 0x02;
  404               	.LM64:
- 405 00bc 3299      		sbic 0x6,2
+ 405 00bc 1B99      		sbic 0x3,3
  406 00be 8260      		ori r24,lo8(2)
  407               	.L41:
  252:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA2_PORT) & _BV(LCD_DATA2_PIN) ) data |= 0x04;
  409               	.LM65:
- 410 00c0 3199      		sbic 0x6,1
+ 410 00c0 1A99      		sbic 0x3,2
  411 00c2 8460      		ori r24,lo8(4)
  412               	.L42:
  253:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         if ( PIN(LCD_DATA3_PORT) & _BV(LCD_DATA3_PIN) ) data |= 0x08;        
  414               	.LM66:
- 415 00c4 3099      		sbic 0x6,0
+ 415 00c4 1999      		sbic 0x3,1
  416 00c6 8860      		ori r24,lo8(8)
  417               	.L43:
  254:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         lcd_e_low();
  419               	.LM67:
- 420 00c8 2898      		cbi 0x5,0
+ 420 00c8 2D98      		cbi 0x5,5
  255:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     }
  256:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     return data;
  257:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c **** }
@@ -1275,25 +1275,25 @@
  530:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         /* configure all port bits as output (LCD data and control lines on different ports */
  531:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_RS_PORT)    |= _BV(LCD_RS_PIN);
  781               	.LM115:
- 782 0188 579A      		sbi 0xa,7
+ 782 0188 399A      		sbi 0x7,1
  532:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_RW_PORT)    |= _BV(LCD_RW_PIN);
  784               	.LM116:
- 785 018a 569A      		sbi 0xa,6
+ 785 018a 389A      		sbi 0x7,0
  533:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_E_PORT)     |= _BV(LCD_E_PIN);
  787               	.LM117:
- 788 018c 209A      		sbi 0x4,0
+ 788 018c 259A      		sbi 0x4,5
  534:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA0_PORT) |= _BV(LCD_DATA0_PIN);
  790               	.LM118:
- 791 018e 3B9A      		sbi 0x7,3
+ 791 018e 249A      		sbi 0x4,4
  535:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA1_PORT) |= _BV(LCD_DATA1_PIN);
  793               	.LM119:
- 794 0190 3A9A      		sbi 0x7,2
+ 794 0190 239A      		sbi 0x4,3
  536:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA2_PORT) |= _BV(LCD_DATA2_PIN);
  796               	.LM120:
- 797 0192 399A      		sbi 0x7,1
+ 797 0192 229A      		sbi 0x4,2
  537:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****         DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
  799               	.LM121:
- 800 0194 389A      		sbi 0x7,0
+ 800 0194 219A      		sbi 0x4,1
  801               	.LBB45:
  802               	.LBB46:
  804               	.Ltext11:
@@ -1313,10 +1313,10 @@
  541:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* initial write to lcd is 8bit */
  542:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);    // LCD_FUNCTION>>4;
  818               	.LM123:
- 819 01a2 429A      		sbi 0x8,2
+ 819 01a2 2B9A      		sbi 0x5,3
  543:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);    // LCD_FUNCTION_8BIT>>4;
  821               	.LM124:
- 822 01a4 439A      		sbi 0x8,3
+ 822 01a4 2C9A      		sbi 0x5,4
  544:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_toggle();
  824               	.LM125:
  825 01a6 0E94 0000 		call toggle_e
@@ -1372,7 +1372,7 @@
  555:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     /* now configure for 4bit mode */
  556:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);   // LCD_FUNCTION_4BIT_1LINE>>4
  877               	.LM131:
- 878 01ce 4398      		cbi 0x8,3
+ 878 01ce 2C98      		cbi 0x5,4
  557:/Users/atakane/Documents/Electronics/IoClock/IoClock/lcd.c ****     lcd_e_toggle();
  880               	.LM132:
  881 01d0 0E94 0000 		call toggle_e
@@ -1446,24 +1446,24 @@
  925               		.ident	"GCC: (GNU) 4.8.1"
 DEFINED SYMBOLS
                             *ABS*:00000000 lcd.c
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:2      *ABS*:0000003e __SP_H__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:3      *ABS*:0000003d __SP_L__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:4      *ABS*:0000003f __SREG__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:5      *ABS*:00000000 __tmp_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:6      *ABS*:00000001 __zero_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:106    .text:00000000 toggle_e
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:141    .text:0000000e lcd_write
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:293    .text:00000078 lcd_read.constprop.0
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:431    .text:000000cc lcd_waitbusy
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:468    .text:000000e0 lcd_command
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:498    .text:000000f2 lcd_data
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:529    .text:00000104 lcd_gotoxy
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:556    .text:00000112 lcd_getxy
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:576    .text:0000011a lcd_clrscr
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:593    .text:00000120 lcd_home
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:611    .text:00000126 lcd_putc
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:686    .text:0000014e lcd_puts
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:723    .text:00000166 lcd_puts_p
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIt3kMb.s:770    .text:00000184 lcd_init
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:106    .text:00000000 toggle_e
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:141    .text:0000000e lcd_write
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:293    .text:00000078 lcd_read.constprop.0
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:431    .text:000000cc lcd_waitbusy
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:468    .text:000000e0 lcd_command
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:498    .text:000000f2 lcd_data
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:529    .text:00000104 lcd_gotoxy
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:556    .text:00000112 lcd_getxy
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:576    .text:0000011a lcd_clrscr
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:593    .text:00000120 lcd_home
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:611    .text:00000126 lcd_putc
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:686    .text:0000014e lcd_puts
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:723    .text:00000166 lcd_puts_p
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccKhPTk7.s:770    .text:00000184 lcd_init
 
 NO UNDEFINED SYMBOLS

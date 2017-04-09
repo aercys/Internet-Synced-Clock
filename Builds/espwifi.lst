@@ -385,13 +385,13 @@
  292               	.global __do_copy_data
 DEFINED SYMBOLS
                             *ABS*:00000000 espwifi.c
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:2      *ABS*:0000003e __SP_H__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:3      *ABS*:0000003d __SP_L__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:4      *ABS*:0000003f __SREG__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:5      *ABS*:00000000 __tmp_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:6      *ABS*:00000001 __zero_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:126    .text:00000000 init_wifi_module
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccjMTbM5.s:188    .text:00000030 connect_wifi
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:126    .text:00000000 init_wifi_module
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccoaBkkD.s:188    .text:00000030 connect_wifi
 
 UNDEFINED SYMBOLS
 uart_init

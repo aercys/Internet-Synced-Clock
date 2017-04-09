@@ -766,18 +766,18 @@
  685               	.global __do_clear_bss
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:2      *ABS*:0000003e __SP_H__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:3      *ABS*:0000003d __SP_L__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:4      *ABS*:0000003f __SREG__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:5      *ABS*:00000000 __tmp_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:6      *ABS*:00000001 __zero_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:124    .text:00000000 __vector_9
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:665    .bss:00000000 second_ticks
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:213    .text:0000006a lcd_msg
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:324    .text:000000f8 update_display
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:451    .text:0000019a system_init
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:620    .text.startup:00000000 main
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccvPNgps.s:671    .data:00000000 uart_output
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:124    .text:00000000 __vector_9
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:665    .bss:00000000 second_ticks
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:213    .text:0000006a lcd_msg
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:324    .text:000000f8 update_display
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:451    .text:0000019a system_init
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:620    .text.startup:00000000 main
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccLx3UBU.s:671    .data:00000000 uart_output
 
 UNDEFINED SYMBOLS
 update_rtc

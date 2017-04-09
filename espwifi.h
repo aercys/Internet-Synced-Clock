@@ -27,8 +27,8 @@
 #define WIFI_CONNECT        "AT+CWJAP=\"%s\",\"%s\"\r\n"
 #define SHOW_LOCAL_IP       "AT+CIFSR\r\n"
 
-#define SSID_NAME           "ERCIYAS"
-#define SSID_PASSWORD       "ae85040pq7"
+#define SSID_NAME           "SSID"
+#define SSID_PASSWORD       "PASS"
 
 #define GET_REQUEST_STR     "GET %s HTTP/1.0\r\n\r\n"
 #define POST_REQUEST        "POST %s HTTP/1.1\r\n" \
