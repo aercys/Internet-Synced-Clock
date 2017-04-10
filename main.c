@@ -13,13 +13,10 @@
 
 FILE uart_output = FDEV_SETUP_STREAM(send_uart_char, NULL, _FDEV_SETUP_WRITE);
 
-volatile second_ticks = 0;
 
 ISR(TIMER2_OVF_vect) {
     update_rtc();
-    if (second_ticks++ == 5) {
-        second_ticks = 0;
-    }
+    TCNT2 = 0x00;
 }
 
 

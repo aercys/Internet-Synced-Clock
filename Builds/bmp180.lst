@@ -1438,22 +1438,22 @@
  1350               	.global __do_clear_bss
 DEFINED SYMBOLS
                             *ABS*:00000000 bmp180.c
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:2      *ABS*:0000003e __SP_H__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:3      *ABS*:0000003d __SP_L__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:4      *ABS*:0000003f __SREG__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:5      *ABS*:00000000 __tmp_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:6      *ABS*:00000001 __zero_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:122    .text:00000000 calculate_altitude
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:122    .text:00000000 calculate_altitude
                             *COM*:00000030 bmp_180
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:169    .text:0000005a read_temperature
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:272    .text:000000d2 calculate_temperature
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:396    .text:000001c6 read_pressure
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:657    .text:000002f8 calculate_pressure
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:1047   .text:000005ae read_coeffs
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:1330   .rodata:00000000 bmp180_coeff_addr
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:1247   .text:000006da init_sensor
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:1279   .text:000006f6 calculate
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccIWQPT7.s:1301   .text:00000702 get_temperature
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:169    .text:0000005a read_temperature
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:272    .text:000000d2 calculate_temperature
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:396    .text:000001c6 read_pressure
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:657    .text:000002f8 calculate_pressure
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:1047   .text:000005ae read_coeffs
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:1330   .rodata:00000000 bmp180_coeff_addr
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:1247   .text:000006da init_sensor
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:1279   .text:000006f6 calculate
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccy8sq7v.s:1301   .text:00000702 get_temperature
 
 UNDEFINED SYMBOLS
 __floatsisf

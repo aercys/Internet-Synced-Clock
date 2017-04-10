@@ -666,28 +666,28 @@
  715               	.global __do_clear_bss
 DEFINED SYMBOLS
                             *ABS*:00000000 rtc.c
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:2      *ABS*:0000003e __SP_H__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:3      *ABS*:0000003d __SP_L__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:4      *ABS*:0000003f __SREG__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:5      *ABS*:00000000 __tmp_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:6      *ABS*:00000001 __zero_reg__
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:140    .text:00000000 make_time_request
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:225    .text:00000070 sync_time
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:677    .bss:00000000 year
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:682    .bss:00000002 month
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:687    .bss:00000004 day
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:702    .bss:0000000a second
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:697    .bss:00000008 minute
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:692    .bss:00000006 hour
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:316    .text:000000f4 init_timer
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:361    .text:0000011e is_leap_year
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:407    .text:0000014e update_rtc
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:568    .text:0000026a get_second
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:586    .text:00000274 get_minute
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:604    .text:0000027e get_hour
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:622    .text:00000288 get_day
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:640    .text:00000292 get_month
-/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccSWFLQX.s:658    .text:0000029c get_year
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:2      *ABS*:0000003e __SP_H__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:3      *ABS*:0000003d __SP_L__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:4      *ABS*:0000003f __SREG__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:5      *ABS*:00000000 __tmp_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:6      *ABS*:00000001 __zero_reg__
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:140    .text:00000000 make_time_request
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:225    .text:00000070 sync_time
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:677    .bss:00000000 year
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:682    .bss:00000002 month
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:687    .bss:00000004 day
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:702    .bss:0000000a second
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:697    .bss:00000008 minute
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:692    .bss:00000006 hour
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:316    .text:000000f4 init_timer
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:361    .text:0000011e is_leap_year
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:407    .text:0000014e update_rtc
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:568    .text:0000026a get_second
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:586    .text:00000274 get_minute
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:604    .text:0000027e get_hour
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:622    .text:00000288 get_day
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:640    .text:00000292 get_month
+/var/folders/2t/x0mw6nss4_z3npyvmny7gnnm0000gn/T//ccTUUcgO.s:658    .text:0000029c get_year
 
 UNDEFINED SYMBOLS
 printf
